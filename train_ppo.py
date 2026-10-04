@@ -76,7 +76,15 @@ def main() -> None:
         default=None,
         help="optional BC checkpoint (runs/bc_*/bc.pt) to warm-start the actor",
     )
+    ap.add_argument(
+        "--load",
+        default=None,
+        help="resume training from a saved MaskablePPO model (e.g. runs/ppo_x/ppo_final)",
+    )
     args = ap.parse_args()
+
+    if args.load and args.bc_init:
+        ap.error("--load and --bc-init are mutually exclusive")
 
     out = args.out or f"runs/ppo_{args.variant}_{args.obs}_{args.seed}"
     os.makedirs(out, exist_ok=True)
@@ -91,9 +99,14 @@ def main() -> None:
         [make_env({**env_kwargs, "seed": args.seed + i}) for i in range(args.n_envs)]
     )
 
-    model = MaskablePPO(
-        "MlpPolicy",
-        venv,
+    if args.load:
+        model = MaskablePPO.load(args.load, env=venv, device=args.device,
+                               tensorboard_log=os.path.join(out, "tb"))
+        print(f"resumed model from {args.load}")
+    else:
+        model = MaskablePPO(
+            "MlpPolicy",
+            venv,
         policy_kwargs={"net_arch": [256, 256]},
         n_steps=args.n_steps,
         batch_size=args.batch_size,

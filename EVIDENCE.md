@@ -91,4 +91,52 @@ A continuation run (`runs/dqn_compact2`, warm-started from `q_final.pt`,
 
 ## M3 — MaskablePPO
 
-(pending — see `results/m3_ppo.json` + `runs/ppo_draw1/metrics.csv`)
+First attempt (`runs/ppo_draw1`, one-hot pomdp obs, with a BC warm-start):
+0.000 eval win rate through 1.5M steps — killed. Same conclusion as M2:
+the 49k-dim one-hot input does not train on laptop budgets.
+
+Compact obs, fresh (no BC) — `runs/ppo_compact_fresh`, 3M steps, ~17 min wall:
+
+```
+$ .venv/bin/python train_ppo.py --steps 3000000 --n-envs 6 --n-steps 1024 \
+    --variant draw1 --obs compact --frame-stack 8 --device cpu --seed 1 \
+    --eval-every 300000 --eval-deals 100 --out runs/ppo_compact_fresh
+step     eval_win_rate@100   wall_s
+ 300000  0.00    99.6
+ 600000  0.00   203.8
+ 900000  0.00   302.3
+1200000  0.00   403.2
+1500000  0.05   509.5
+1800000  0.05   612.7
+2100000  0.06   714.7
+2400000  0.05   821.2
+2700000  0.13   921.7
+3000000  0.11  1018.8
+```
+
+Full-benchmark eval of `ppo_final`:
+
+```
+$ .venv/bin/python eval.py --policy ppo:runs/ppo_compact_fresh/ppo_final \
+    --deals 1000 --variant draw1 --obs compact --jobs 8
+  deals=1000  wins=116  win_rate=0.1160
+  avg_moves=85.5  avg_foundations=15.2  avg_wall_ms=48.3
+  outcomes={'no_progress_cycle': 884, 'win': 116}
+```
+
+Committed: `results/m3_ppo.json`.
+
+A `compact_perfect` run (perfect information, M4-style stretch) reached
+0.20 eval@100 at 2.7M steps — see ANALYSIS.md for the comparison.
+
+## Recordings
+
+`recordings/` contains GIF episodes rendered by `record.py` directly from
+the environment state (no pixels fed to the agent — the agent only sees
+the compact obs vector; every frame is a real masked action the policy
+chose on a benchmark deal):
+
+- `ppo_win_seed{118,47,211,37,275,639}.gif` — MaskablePPO winning six
+  different benchmark deals (verified `outcome: "win"` in the eval JSON).
+- `dqn_concede_seed14.gif` — the trained DQN voluntarily conceding a
+  hopeless deal at move 86 (64/1000 concessions observed in eval).
