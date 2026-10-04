@@ -188,3 +188,36 @@ API: `GET /api/state` `POST /api/new|/api/move|/api/undo|/api/concede`
 `POST /api/agent/step|/api/agent/hint` `GET /api/agent/policies`.
 Hidden cards/stock order are never serialized — the UI is a legal POMDP
 client. Files: `src/solitaire_rl/webapi.py`, `web/{index.html,app.css,app.js}`.
+
+## Improvement experiments (post-M3, draw-1, 1000-deal eval)
+
+Hypothesis (2026-10-04): three cheap levers to lift PPO past the 0.118
+plateau — curriculum on heuristic-winnable deals, a correctly
+activation-matched BC warm-start, and exposing the heuristic's choice as
+observation features.
+
+Machinery (commit a016b03): `seed_pool` env param restricts training
+episodes to a deal set; `scripts/rank_deals.py` buckets train seeds by
+heuristic outcome; `compact_hint` obs appends the heuristic's chosen
+action (10 dims: kind one-hot + src/dst/run_start); `train_bc.py
+--activation tanh` emits the exact MaskablePPO `policy_net`/`action_net`
+arch so `--bc-init` is a true warm-start (the earlier ReLU BC was the
+documented failure).
+
+Deal difficulty ranking (seeds 1_000_000..1_001_999, heuristic, jobs 8,
+9s wall): easy=873 medium=3 hard=1124 — heuristic train-range win rate
+0.436 vs 0.414 on the benchmark (population consistent).
+`benchmarks/deal_difficulty.json`, pool file `benchmarks/easy_seeds.json`.
+
+Measured on the SAME 1000 benchmark deals (eval.py --jobs 4-8):
+
+| run | recipe | steps | win_rate |
+|-----|--------|-------|----------|
+| runs/ppo_curr_p1 | compact, easy-pool only (curriculum phase 1) | 3M | 0.125 |
+| runs/ppo_bcinit | compact, Tanh-BC init | 3M | 0.142 |
+| runs/ppo_hint | compact_hint obs | 3M | (eval pending) |
+
+Read at equal budget both new recipes already beat the 0.118 baseline
+(6M). Phase-2 expansion (p1 --load on full seeds), bc-init continuation
+to 6M, and the combo run (hint obs + Tanh BC init, acc@BC 0.816) are in
+flight; `runs/*/metrics.csv` has the per-100k curves.
