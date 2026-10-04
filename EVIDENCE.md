@@ -338,3 +338,16 @@ voters must all be strong (mixed-lineage inclusion of 0.118/0.177
 models hurt). 91% of the heuristic bar now. Next: distill the ensemble
 back into a single net (bc_ensA, acc 0.666) → PPO — iterated
 distill-then-improve. train_bc --teacher now accepts 'ens:s1,s2,…'.
+
+Batch-9 — ensemble distillation (same 1000-deal benchmark):
+
+| run | recipe | win_rate |
+|-----|--------|----------|
+| runs/ppo_ensdist@2.6M | BC(ens-A votes, acc 0.666) init + PPO lr1e-4 | 0.332 |
+| runs/ppo_ensdist@1.2M | same run | 0.291 |
+| runs/ppo_ensdist@3.0M | same run, final | 0.306 |
+
+Single-model ceiling confirmed again at ~0.33 — the ensemble's +0.05
+edge doesn't survive 66%-fidelity distillation. The 0.380 ens-A stays
+champion. Chaining the distilled basin (ensdist_6m) and growing the
+voter pool (ensdist_s3) for the next ensemble assembly.
