@@ -430,3 +430,19 @@ member_wins: sparse=60, 9m28=58, hintbc=56, amp512=51, bcxllr6m=45,
 
 Verdict: the portfolio keeps paying for *every* lineage, weak or strong —
 coverage is orthogonal to average strength. Best-of-N artifact = 0.592.
+
+## Batch 11d — three new lineages push portfolio to 0.603
+
+Launched 3 diversity lineages (all bc-init, lr 1e-4, 3M): divA (amp1-clone
+init, seed 7) = 0.344, divC (heuristic-clone init, seed 13) = 0.295,
+div512 (512×2 arch clone, seed 11) = 0.293.
+
+```
+portfolio20 (portfolio17 + divA + divC + div512)
+win_rate = 0.603   — 18 of 20 members score unique wins
+divA alone adds the most: 54 attributed wins, incl. deals no member covers
+```
+
+Verdict: coverage scales with lineage count; even a 0.29 member buys
+unique deals. Best-of-N artifact = 0.603. New hard-pool / ent-0.02 /
+ensA-init lineages in flight for the next increment.
