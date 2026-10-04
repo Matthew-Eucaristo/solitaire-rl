@@ -92,7 +92,7 @@ def main() -> None:
     ap.add_argument(
         "--obs",
         default="pomdp",
-        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+        choices=["pomdp", "perfect", "compact", "compact_perfect", "compact_hint"],
     )
     ap.add_argument("--out", default="results/recordings")
     ap.add_argument("--fps", type=float, default=4.0)
