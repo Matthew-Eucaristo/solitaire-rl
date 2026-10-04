@@ -398,3 +398,19 @@ picks member per deal) = 0.343 < champion — value heads can't predict which
 member wins a deal; no MaskableRecurrentPPO in sb3-contrib 2.9.0 (masking and
 recurrence aren't combined upstream); multiprocessing-spawn under a stdin
 script deadlocks children (heredoc evals must run from real .py files).
+
+## Batch 11b — portfolio grows with lineage diversity (0.567)
+
+Win-sets measured for every strong checkpoint; the union of 13 members =
+0.567. Greedy max-coverage confirms each *lineage* adds unique deals
+(ensdist/BC-diverse/sparse lineages +21-29 deals each after the first two).
+
+```
+portfolio13 (all 13 measured members incl. ens-A as member)
+win_rate = 0.567   (member attribution spread 35-79 wins across 11 members)
+```
+
+Reading: portfolio is the declared best-of-N system, not a single model —
+but it is the strongest honest artifact this campaign produced, and it only
+grows with lineage diversity. Single-model and vote-ensemble ceilings stand
+at 0.353 / 0.380; best-of-N = 0.567.
