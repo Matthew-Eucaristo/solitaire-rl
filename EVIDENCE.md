@@ -221,3 +221,21 @@ Read at equal budget both new recipes already beat the 0.118 baseline
 (6M). Phase-2 expansion (p1 --load on full seeds), bc-init continuation
 to 6M, and the combo run (hint obs + Tanh BC init, acc@BC 0.816) are in
 flight; `runs/*/metrics.csv` has the per-100k curves.
+
+Batch-2 results (same 1000-deal benchmark):
+
+| run | recipe | win_rate |
+|-----|--------|----------|
+| runs/ppo_hint | compact_hint obs only, 3M | 0.114 |
+| runs/ppo_curr_p2 | curriculum phase-2 (p1 --load, full seeds), +3M | 0.129 |
+| runs/ppo_bcinit_6m | Tanh-BC init continued to ~6M total | 0.127 |
+| runs/ppo_hint_bc | compact_hint + Tanh-BC init, 3M | **0.265** |
+
+Interpretation: neither lever works alone — hint-only 0.114, curriculum
+0.125/0.129, BC-init 0.142 (and decayed to 0.127 by 6M). Together they
+compose: BC plants the policy in a working follow-the-expert attractor,
+and the hint features keep the expert signal observable at every step so
+PPO can learn residual deviations. Result 0.265 = 2.2× the 0.118
+baseline, above the 0.177 perfect-info model, at HALF its step budget.
+ppo_hint_bc was still climbing (eval@100 hit 0.27) — extension to 6M
+launched.
