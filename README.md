@@ -1,5 +1,9 @@
 # solitaire-rl
 
+[![tests](https://github.com/Matthew-Eucaristo/solitaire-rl/actions/workflows/tests.yml/badge.svg)](https://github.com/Matthew-Eucaristo/solitaire-rl/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Python ≥3.11](https://img.shields.io/badge/python-%E2%89%A53.11-blue)
+
 Reinforcement-learning agents that learn to play **Klondike Solitaire** from
 raw game state — no vision, no pixels, state vectors + legal-move masking —
 evaluated fairly on a fixed set of 1000 deals against a deterministic
@@ -8,6 +12,8 @@ heuristic baseline.
 ![MaskablePPO winning a benchmark deal](recordings/ppo_win_seed47.gif)
 
 ## Play it in your browser
+
+![The playable web UI](web/screenshot.png)
 
 ```bash
 ./run_web.sh    # one command: uv syncs deps, then serves on :8080
