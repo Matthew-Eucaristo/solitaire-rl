@@ -5,6 +5,7 @@ __pycache__/
 dist/
 build/
 runs/
+recordings/tmp/
 .pytest_cache/
 .ruff_cache/
 .DS_Store

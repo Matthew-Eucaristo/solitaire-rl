@@ -27,7 +27,7 @@ from solitaire_rl.actions import (
     action_to_move,
 )
 from solitaire_rl.moves import Move, MoveKind, apply_move, legal_moves
-from solitaire_rl.obs import OBS_VARIANTS, PERFECT_DIM, POMDP_DIM, encode_state
+from solitaire_rl.obs import OBS_VARIANTS, encode_state, obs_dim
 from solitaire_rl.state import DRAW1, VARIANTS, GameState, deal
 
 # Outcome labels reported in info["outcome"].
@@ -95,9 +95,10 @@ class KlondikeEnv(gym.Env):
         self._rng = np.random.default_rng(seed)
 
         self.action_space = spaces.Discrete(N_ACTIONS)
-        base_dim = POMDP_DIM if obs_variant == "pomdp" else PERFECT_DIM
+        base_dim = obs_dim(obs_variant)
+        low = -1.0 if obs_variant.startswith("compact") else 0.0
         self.observation_space = spaces.Box(
-            low=0.0, high=1.0, shape=(self.frame_stack * base_dim,), dtype=np.float32
+            low=low, high=1.0, shape=(self.frame_stack * base_dim,), dtype=np.float32
         )
 
         self.state: GameState | None = None

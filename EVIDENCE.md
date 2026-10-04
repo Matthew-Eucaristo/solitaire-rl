@@ -50,7 +50,44 @@ four runs.
 
 ## M2 — masked DQN
 
-(pending — see `results/m2_dqn.json` + `runs/dqn_draw1/metrics.csv`)
+Two runs, same code; only `obs_variant` differs.
+
+**one-hot POMDP obs (49,304 dims, frame_stack=8)** — `runs/dqn_draw1`:
+0.000 eval win rate through 150k steps (avg foundations plateaued ~7);
+killed and superseded by the compact run — root cause recorded in
+ANALYSIS.md.
+
+```
+$ .venv/bin/python train_dqn.py --steps 250000 --variant draw1 --obs compact \
+    --frame-stack 8 --device cpu --seed 0 --out runs/dqn_compact
+[  39.9s] step=25000  eps=0.842 eps_done=795  win=0  eval@100=0.000
+[  87.5s] step=50000  eps=0.683 eps_done=1540 win=0  eval@100=0.000
+[ 132.2s] step=75000  eps=0.525 eps_done=2258 win=0  eval@100=0.000
+[ 177.9s] step=100000 eps=0.367 eps_done=2842 win=0  eval@100=0.000
+[ 219.6s] step=125000 eps=0.208 eps_done=3301 win=0  eval@100=0.000
+[ 266.8s] step=150000 eps=0.050 eps_done=3649 win=1  eval@100=0.000
+[ 312.1s] step=175000 eps=0.050 eps_done=3915 win=5  eval@100=0.010
+[ 358.6s] step=200000 eps=0.050 eps_done=4173 win=9  eval@100=0.040
+[ 400.1s] step=225000 eps=0.050 eps_done=4439 win=9  eval@100=0.000
+[ 425.7s] step=250000 eps=0.050 eps_done=4700 win=10 eval@100=0.050
+done: episodes=4700 train_wins=10 wall=426s
+```
+
+Full-benchmark eval of `q_final.pt` (greedy masked argmax):
+
+```
+$ .venv/bin/python eval.py --policy dqn:runs/dqn_compact/q_final.pt \
+    --deals 1000 --variant draw1 --obs compact --jobs 8
+  deals=1000  wins=58   win_rate=0.0580
+  avg_moves=110.5  avg_foundations=13.4  avg_wall_ms=22.3
+  outcomes={'no_progress_cycle': 942, 'win': 58}
+```
+
+Committed: `results/m2_dqn.json`, `results/m2_dqn_curve.png` (learning
+curve from `runs/dqn_compact/metrics.csv`).
+
+A continuation run (`runs/dqn_compact2`, warm-started from `q_final.pt`,
+500k more steps at ε 0.1→0.02) is evaluated separately in ANALYSIS.md.
 
 ## M3 — MaskablePPO
 

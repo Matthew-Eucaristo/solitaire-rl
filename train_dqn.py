@@ -28,20 +28,18 @@ from solitaire_rl.evaluator import play_episode
 
 def git_hash() -> str:
     try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], text=True
-        ).strip()
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
     except Exception:
         return "unknown"
 
 
 class Replay:
-    """Fixed-size replay storing obs/next_obs as uint8 (all obs in [0,1])."""
+    """Fixed-size replay storing obs/next_obs as float16 (compact enough)."""
 
     def __init__(self, capacity: int, obs_dim: int) -> None:
         self.cap = capacity
-        self.obs = np.zeros((capacity, obs_dim), dtype=np.uint8)
-        self.nobs = np.zeros((capacity, obs_dim), dtype=np.uint8)
+        self.obs = np.zeros((capacity, obs_dim), dtype=np.float16)
+        self.nobs = np.zeros((capacity, obs_dim), dtype=np.float16)
         self.act = np.zeros(capacity, dtype=np.int32)
         self.rew = np.zeros(capacity, dtype=np.float32)
         self.done = np.zeros(capacity, dtype=np.float32)
@@ -51,8 +49,8 @@ class Replay:
 
     def push(self, o, a, r, no, d, nmask) -> None:
         i = self.i
-        self.obs[i] = (o * 255).astype(np.uint8)
-        self.nobs[i] = (no * 255).astype(np.uint8)
+        self.obs[i] = o.astype(np.float16)
+        self.nobs[i] = no.astype(np.float16)
         self.act[i] = a
         self.rew[i] = r
         self.done[i] = d
@@ -63,10 +61,10 @@ class Replay:
     def sample(self, batch: int, rng: np.random.Generator):
         idx = rng.integers(0, self.n, size=batch)
         return (
-            torch.as_tensor(self.obs[idx]).float() / 255,
+            torch.as_tensor(self.obs[idx]).float(),
             torch.as_tensor(self.act[idx]).long(),
             torch.as_tensor(self.rew[idx]),
-            torch.as_tensor(self.nobs[idx]).float() / 255,
+            torch.as_tensor(self.nobs[idx]).float(),
             torch.as_tensor(self.done[idx]),
             torch.as_tensor(self.mask[idx]),
         )
@@ -89,7 +87,11 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--steps", type=int, default=200_000)
     ap.add_argument("--variant", default="draw1", choices=["draw1", "draw3"])
-    ap.add_argument("--obs", default="pomdp", choices=["pomdp", "perfect"])
+    ap.add_argument(
+        "--obs",
+        default="pomdp",
+        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+    )
     ap.add_argument("--frame-stack", type=int, default=8)
     ap.add_argument("--reward-mode", default="shaped", choices=["shaped", "sparse"])
     ap.add_argument("--device", default="cpu", choices=["cpu", "mps"])
@@ -103,9 +105,13 @@ def main() -> None:
     ap.add_argument("--eps-end", type=float, default=0.05)
     ap.add_argument("--eps-decay-frac", type=float, default=0.6)
     ap.add_argument("--train-every", type=int, default=4)
-    ap.add_argument("--target-every", type=int, default=2_000,
-                    help="env steps between target syncs")
+    ap.add_argument(
+        "--target-every", type=int, default=2_000, help="env steps between target syncs"
+    )
     ap.add_argument("--warmup", type=int, default=1_000)
+    ap.add_argument(
+        "--init", default=None, help="optional checkpoint to warm-start Q (e.g. runs/bc_init/bc.pt)"
+    )
     ap.add_argument("--ckpt-every", type=int, default=50_000)
     ap.add_argument("--eval-every", type=int, default=25_000)
     ap.add_argument("--eval-deals", type=int, default=100)
@@ -127,6 +133,10 @@ def main() -> None:
     obs_dim = env.observation_space.shape[0]
 
     q = build_q(obs_dim, args.hidden).to(args.device)
+    if args.init:
+        ckpt = torch.load(args.init, map_location=args.device, weights_only=True)
+        q.load_state_dict(ckpt["state_dict"])
+        print(f"warm-started Q from {args.init}")
     qt = build_q(obs_dim, args.hidden).to(args.device)
     qt.load_state_dict(q.state_dict())
     opt = torch.optim.Adam(q.parameters(), lr=args.lr)
@@ -180,9 +190,16 @@ def main() -> None:
                 wins += 1
             episodes += 1
             writer.writerow(
-                [step, episodes, round(ep_return, 3), ep_len,
-                 int(info["outcome"] == "win"), round(e, 3),
-                 round(float(np.mean(losses)) if losses else 0.0, 5), ""]
+                [
+                    step,
+                    episodes,
+                    round(ep_return, 3),
+                    ep_len,
+                    int(info["outcome"] == "win"),
+                    round(e, 3),
+                    round(float(np.mean(losses)) if losses else 0.0, 5),
+                    "",
+                ]
             )
             obs, info = env.reset()
             ep_return = ep_len = 0
@@ -220,8 +237,10 @@ def main() -> None:
 
         if step % args.eval_every == 0:
             wr = evaluate_q(q, obs_dim, eval_kwargs, eval_seeds, args.device)
-            print(f"[{time.perf_counter()-t0:7.1f}s] step={step} eps={e:.3f} "
-                  f"eps_done={episodes} win={wins} eval@100={wr:.3f}")
+            print(
+                f"[{time.perf_counter() - t0:7.1f}s] step={step} eps={e:.3f} "
+                f"eps_done={episodes} win={wins} eval@100={wr:.3f}"
+            )
             writer.writerow([step, episodes, "", "", "", round(e, 3), "", wr])
             csv_file.flush()
 
@@ -230,7 +249,7 @@ def main() -> None:
         os.path.join(out, "q_final.pt"),
     )
     csv_file.close()
-    print(f"done: episodes={episodes} train_wins={wins} wall={time.perf_counter()-t0:.0f}s")
+    print(f"done: episodes={episodes} train_wins={wins} wall={time.perf_counter() - t0:.0f}s")
 
 
 if __name__ == "__main__":

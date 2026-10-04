@@ -32,12 +32,12 @@ are always seeds ≥ 1,000,000 — the two sets are disjoint by construction.
 
 ## Results (fixed benchmark, 1000 deals each)
 
-| Policy | draw-1 win rate | draw-3 win rate |
-|--------|-----------------|-----------------|
-| random_legal | 0.000 | 0.000 |
-| heuristic | **0.414** | **0.118** |
-| masked DQN | — | — |
-| MaskablePPO | — | — |
+| Policy | obs | draw-1 win rate | draw-3 win rate |
+|--------|-----|-----------------|-----------------|
+| random_legal | — | 0.000 | 0.000 |
+| heuristic | — | **0.414** | **0.118** |
+| masked DQN (250k steps) | compact | 0.058 | — |
+| MaskablePPO | — | — | — |
 
 Dashes fill in as M2/M3 complete; per-run JSONs live in `results/`.
 

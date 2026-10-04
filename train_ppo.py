@@ -21,9 +21,7 @@ from solitaire_rl.env import KlondikeEnv
 
 def git_hash() -> str:
     try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], text=True
-        ).strip()
+        return subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], text=True).strip()
     except Exception:
         return "unknown"
 
@@ -54,7 +52,11 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--steps", type=int, default=1_000_000)
     ap.add_argument("--variant", default="draw1", choices=["draw1", "draw3"])
-    ap.add_argument("--obs", default="pomdp", choices=["pomdp", "perfect"])
+    ap.add_argument(
+        "--obs",
+        default="pomdp",
+        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+    )
     ap.add_argument("--frame-stack", type=int, default=8)
     ap.add_argument("--reward-mode", default="shaped", choices=["shaped", "sparse"])
     ap.add_argument("--device", default="cpu", choices=["cpu", "mps"])
@@ -69,6 +71,11 @@ def main() -> None:
     ap.add_argument("--eval-every", type=int, default=100_000)
     ap.add_argument("--eval-deals", type=int, default=100)
     ap.add_argument("--ckpt-every", type=int, default=200_000)
+    ap.add_argument(
+        "--bc-init",
+        default=None,
+        help="optional BC checkpoint (runs/bc_*/bc.pt) to warm-start the actor",
+    )
     args = ap.parse_args()
 
     out = args.out or f"runs/ppo_{args.variant}_{args.obs}_{args.seed}"
@@ -100,6 +107,21 @@ def main() -> None:
         tensorboard_log=os.path.join(out, "tb"),
     )
 
+    if args.bc_init:
+        import torch
+
+        ckpt = torch.load(args.bc_init, map_location=args.device, weights_only=True)
+        sd = ckpt["state_dict"]
+        pol = model.policy
+        with torch.no_grad():
+            pol.mlp_extractor.policy_net[0].weight.copy_(sd["0.weight"])
+            pol.mlp_extractor.policy_net[0].bias.copy_(sd["0.bias"])
+            pol.mlp_extractor.policy_net[2].weight.copy_(sd["2.weight"])
+            pol.mlp_extractor.policy_net[2].bias.copy_(sd["2.bias"])
+            pol.action_net.weight.copy_(sd["4.weight"])
+            pol.action_net.bias.copy_(sd["4.bias"])
+        print(f"warm-started actor from {args.bc_init}")
+
     with open(os.path.join(out, "config.json"), "w") as f:
         json.dump({**vars(args), "git": git_hash()}, f, indent=2)
 
@@ -120,14 +142,14 @@ def main() -> None:
         wr = masked_eval(model, {**env_kwargs, "seed": None}, eval_seeds)
         writer.writerow([done, round(wr, 4), round(time.perf_counter() - t0, 1)])
         csv_file.flush()
-        print(f"[{time.perf_counter()-t0:8.1f}s] step={done} eval_win@{len(eval_seeds)}={wr:.3f}")
+        print(f"[{time.perf_counter() - t0:8.1f}s] step={done} eval_win@{len(eval_seeds)}={wr:.3f}")
         if done % args.ckpt_every == 0 or done == args.steps:
             model.save(os.path.join(out, f"ppo_{done}"))
 
     model.save(os.path.join(out, "ppo_final"))
     venv.close()
     csv_file.close()
-    print(f"done wall={time.perf_counter()-t0:.0f}s -> {out}")
+    print(f"done wall={time.perf_counter() - t0:.0f}s -> {out}")
 
 
 if __name__ == "__main__":

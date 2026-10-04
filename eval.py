@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Evaluate a policy on the fixed benchmark deals.
 
-    python eval.py --policy heuristic --deals 1000 --variant draw1 --jobs 8
-    python eval.py --policy dqn:runs/dqn/q_final.pt --deals 1000
-    python eval.py --policy ppo:runs/ppo/ppo_final.zip --deals 1000
+python eval.py --policy heuristic --deals 1000 --variant draw1 --jobs 8
+python eval.py --policy dqn:runs/dqn/q_final.pt --deals 1000
+python eval.py --policy ppo:runs/ppo/ppo_final.zip --deals 1000
 """
 
 from __future__ import annotations
@@ -17,13 +17,19 @@ from solitaire_rl.evaluator import load_benchmark_seeds, print_summary, run_eval
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--policy", required=True,
-                    help="random | heuristic | dqn:<ckpt.pt> | ppo:<model.zip>")
+    ap.add_argument(
+        "--policy", required=True, help="random | heuristic | dqn:<ckpt.pt> | ppo:<model.zip>"
+    )
     ap.add_argument("--deals", type=int, default=1000)
-    ap.add_argument("--deal-seeds", default=None,
-                    help="deals.json path (default benchmarks/deals.json)")
+    ap.add_argument(
+        "--deal-seeds", default=None, help="deals.json path (default benchmarks/deals.json)"
+    )
     ap.add_argument("--variant", default="draw1", choices=["draw1", "draw3"])
-    ap.add_argument("--obs", default="pomdp", choices=["pomdp", "perfect"])
+    ap.add_argument(
+        "--obs",
+        default="pomdp",
+        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+    )
     ap.add_argument("--frame-stack", type=int, default=8)
     ap.add_argument("--reward-mode", default="shaped", choices=["shaped", "sparse"])
     ap.add_argument("--max-steps", type=int, default=500)

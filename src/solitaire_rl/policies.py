@@ -35,7 +35,7 @@ class RandomPolicy:
     def __init__(self, seed: int = 0) -> None:
         self._rng = random.Random(seed)
 
-    def act(self, env: "KlondikeEnv") -> int:
+    def act(self, env: KlondikeEnv) -> int:
         moves = env._legal()
         if not moves:
             return ACTION_CONCEDE
@@ -62,7 +62,7 @@ class HeuristicPolicy:
     to give up".
     """
 
-    def act(self, env: "KlondikeEnv") -> int:  # noqa: C901
+    def act(self, env: KlondikeEnv) -> int:
         state = env.state
         assert state is not None
         moves = env._legal()
@@ -127,7 +127,7 @@ class HeuristicPolicy:
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def _repeats(env: "KlondikeEnv", move: Move) -> bool:
+    def _repeats(env: KlondikeEnv, move: Move) -> bool:
         """True when applying `move` would revisit a seen board signature.
 
         Only TABLEAU_TO_TABLEAU and DRAW can revisit a state — every other
@@ -221,7 +221,7 @@ class MaskedArgmaxPolicy:
     def __init__(self, predict_fn) -> None:
         self._predict = predict_fn
 
-    def act(self, env: "KlondikeEnv") -> int:
+    def act(self, env: KlondikeEnv) -> int:
         return self._predict(env)
 
 

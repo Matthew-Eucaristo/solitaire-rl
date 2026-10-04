@@ -1,6 +1,6 @@
 """Record episodes to GIFs — renders each step's board via PIL frames.
 
-    python -m solitaire_rl.record --policy heuristic --seeds 0 1 2 --out results/recordings
+python -m solitaire_rl.record --policy heuristic --seeds 0 1 2 --out results/recordings
 """
 
 from __future__ import annotations
@@ -89,7 +89,11 @@ def main() -> None:
     ap.add_argument("--policy", default="heuristic")
     ap.add_argument("--seeds", type=int, nargs="+", required=True)
     ap.add_argument("--variant", default="draw1", choices=["draw1", "draw3"])
-    ap.add_argument("--obs", default="pomdp", choices=["pomdp", "perfect"])
+    ap.add_argument(
+        "--obs",
+        default="pomdp",
+        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+    )
     ap.add_argument("--out", default="results/recordings")
     ap.add_argument("--fps", type=float, default=4.0)
     args = ap.parse_args()

@@ -162,6 +162,27 @@ def test_perfect_obs_has_stock_order():
     assert block[0][top.id] == 1.0 or block[-1][top.id] == 1.0
 
 
+def test_compact_obs_dims_and_range():
+    env = KlondikeEnv(obs_variant="compact", frame_stack=8)
+    obs, _ = env.reset(seed=1)
+    assert obs.shape == (8 * 132,)
+    assert obs.min() >= -1.0 and obs.max() <= 1.0
+    env2 = KlondikeEnv(obs_variant="compact_perfect", frame_stack=1)
+    obs2, _ = env2.reset(seed=1)
+    assert obs2.shape == (198,)
+
+
+def test_compact_hides_stock_order():
+    """Compact POMDP obs must not leak the stock order."""
+    env = KlondikeEnv(obs_variant="compact", frame_stack=1)
+    env.reset(seed=1)
+    st = env.state
+    before = env._raw_obs().copy()
+    st.stock.reverse()  # scramble hidden order
+    after = env._raw_obs()
+    np.testing.assert_array_equal(before, after)
+
+
 def test_pomdp_hides_stock_order():
     """Two states differing only in stock order must produce the same POMDP obs."""
     env = KlondikeEnv(obs_variant="pomdp", frame_stack=1)
