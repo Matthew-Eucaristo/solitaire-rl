@@ -1,88 +1,114 @@
 # solitaire-rl
 
-Reinforcement-learning agents for **Klondike Solitaire** — state vectors,
-legal-move masking, fixed-deal evaluation. No pixels. Built as a
-reproducible research artifact; see `DECISIONS.md` for every default that
-was chosen and why.
+Reinforcement-learning agents that learn to play **Klondike Solitaire** from
+raw game state — no vision, no pixels, state vectors + legal-move masking —
+evaluated fairly on a fixed set of 1000 deals against a deterministic
+heuristic baseline.
 
-## Setup
+![MaskablePPO winning a benchmark deal](recordings/ppo_win_seed47.gif)
+
+## Play it in your browser
 
 ```bash
 uv sync --extra dev
+.venv/bin/python -m uvicorn solitaire_rl.webapi:app --port 8080
 ```
+
+Open http://localhost:8080 — a complete Klondike game running on the **same
+rules engine** as the tests and evals (no JavaScript rules port that could
+diverge): drag & drop, double-click to foundation, undo, hint, concede,
+sounds, draw-1 / draw-3, reproducible seeded deals.
+
+The **Watch** button hands the live board to an agent (heuristic, masked
+DQN, MaskablePPO, or perfect-info PPO). Its env is rebuilt by replaying the
+game's action history with the policy's own observation variant — what you
+watch is exactly what was benchmarked. Winning deals to try with PPO:
+**284, 118, 161, 211**.
+
+## Results — fixed benchmark, 1000 deals (seeds 0–999)
+
+| Policy | Observation | Draw-1 | Draw-3 |
+|--------|-------------|--------|--------|
+| random_legal | — | 0.0% | 0.0% |
+| **heuristic** (rule-based) | — | **41.4%** | **11.8%** |
+| masked DQN (250k steps) | compact | 5.8% | — |
+| MaskablePPO (3M steps) | compact POMDP | 11.6% | — |
+| MaskablePPO (6M steps) | compact POMDP | 11.8% | — |
+| MaskablePPO (6M steps) | compact, perfect info | 17.7% | — |
+
+Every number comes from `eval.py` on the same fixed deal set — never a
+random sample. Training deals are always seeds ≥ 1,000,000, so train and
+benchmark sets are disjoint by construction. Per-run JSONs in `results/`,
+learning curve in `results/m2_dqn_curve.png`.
+
+The honest takeaway (see `ANALYSIS.md`): Klondike is brutal for generic deep
+RL at laptop scale — sparse rewards, hidden cards, long horizons. The
+heuristic wins; the RL agents learned to *concede* hopeless deals (they
+discovered resignation on their own) and PPO reaches ~12–18%. The biggest
+unlock was observation design: the 49k-dim one-hot encoding trained to 0.0%
+at any budget, while the 132-dim compact encoding produced wins immediately.
 
 ## Quick look
 
 ```bash
-.venv/bin/python -m solitaire_rl.demo --episodes 5 --policy heuristic   # text games
-.venv/bin/python -m pytest -q                                          # 44 tests
+.venv/bin/python -m solitaire_rl.demo --episodes 5 --policy heuristic  # text games
+.venv/bin/python -m pytest -q                                        # 54 tests
+.venv/bin/python eval.py --policy heuristic --deals 1000 --variant draw1 --jobs 8
+.venv/bin/python eval.py --policy ppo:checkpoints/ppo_compact_6m.zip --obs compact
+.venv/bin/python scripts/reproduce.sh                                # M0–M3 checks < 30 min
 ```
 
-## Evaluate a policy on the 1000-deal benchmark
+## Train your own
 
 ```bash
-.venv/bin/python eval.py --policy heuristic --deals 1000 --variant draw1 --jobs 8
-.venv/bin/python eval.py --policy random    --deals 1000 --variant draw3
-.venv/bin/python eval.py --policy dqn:runs/dqn_draw1/q_final.pt
-.venv/bin/python eval.py --policy ppo:runs/ppo_draw1/ppo_final
+.venv/bin/python train_ppo.py --obs compact --steps 3000000 --n-envs 8 --out runs/ppo
+.venv/bin/python train_dqn.py --obs compact --steps 250000 --out runs/dqn
 ```
 
-Benchmark deals are `benchmarks/deals.json` (seeds 0–999). Training deals
-are always seeds ≥ 1,000,000 — the two sets are disjoint by construction.
+Both write `metrics.csv` + TensorBoard + `config.json` (with git hash) into
+`runs/<name>` and checkpoint every `--eval-every` steps. `train_ppo.py
+--load runs/ppo/ppo_final` resumes a run.
 
-## Results (fixed benchmark, 1000 deals each)
+## Recordings
 
-| Policy | obs | draw-1 win rate | draw-3 win rate |
-|--------|-----|-----------------|-----------------|
-| random_legal | — | 0.000 | 0.000 |
-| heuristic | — | **0.414** | **0.118** |
-| masked DQN (250k steps) | compact | 0.058 | — |
-| MaskablePPO (3M steps) | compact | 0.116 | — |
-| MaskablePPO (6M steps) | compact | 0.118 | — |
-| MaskablePPO (6M steps) | compact_perfect | 0.177 | — |
+`recordings/` — GIF episodes rendered from env state, all real masked-policy
+play on benchmark deals (no demos of anything that wasn't measured):
 
-Dashes fill in as M2/M3 complete; per-run JSONs live in `results/`.
-
-## Play in the browser (or watch the agents)
-
-```
-.venv/bin/python -m uvicorn solitaire_rl.webapi:app --port 8080
-```
-
-Open http://localhost:8080 — a full Klondike UI on the **same engine** the
-tests and evals run (no JS rules port): drag & drop, double-click to
-foundation, undo, hints, concede, draw-1/draw-3, seeded deals. The "Watch"
-button lets a chosen agent (heuristic / masked DQN / MaskablePPO /
-perfect-info PPO) take over the live board — its env is rebuilt by replaying
-the game's action history with the policy's own obs variant, so agents see
-exactly what they were trained on. Winning seeds to try with PPO: 284, 118,
-161, 211. (See `src/solitaire_rl/webapi.py` + `web/`; FastAPI+uvicorn are the
-only added deps, recorded in DECISIONS.md.)
+| GIF | Policy | Deal | Outcome |
+|-----|--------|------|---------|
+| `ppo_win_seed{118,47,211,37,275,639}.gif` | MaskablePPO, compact POMDP | benchmark | win ×6 |
+| `ppo_perfect_win_seed{211,191}.gif` | MaskablePPO, perfect-info | benchmark | win ×2 |
+| `dqn_win_seed{47,718}.gif` | masked DQN | benchmark | win ×2 |
+| `heuristic_win_seed{326,191}.gif` | heuristic baseline | benchmark | win ×2 |
+| `heuristic_lose_seed0.gif` | heuristic baseline | benchmark | no progress |
+| `dqn_concede_seed14.gif` | masked DQN | benchmark | learned resignation |
 
 ## Layout
 
 ```
-src/solitaire_rl/   engine + env + policies + recording
-  cards.py state.py moves.py        rules engine
-  actions.py obs.py env.py          Discrete(654) schema, obs encoder, Gymnasium env
-  policies.py evaluator.py render.py record.py demo.py
-train_dqn.py train_ppo.py eval.py   entry points
-scripts/gen_benchmarks.py           regenerates benchmarks/deals.json
-tests/                              44 tests incl. 10k-state mask check
-runs/                               training outputs (gitignored)
-results/                            committed eval JSONs + plots
-recordings/                         GIF episodes of trained agents
+src/solitaire_rl/
+  cards.py state.py moves.py     rules engine (deal, legality, apply)
+  actions.py obs.py env.py       Discrete(654) schema, obs encoders, Gymnasium env
+  policies.py                    random + heuristic baselines, policy loaders
+  evaluator.py                   fixed-deal eval harness (multiprocessing)
+  record.py demo.py render.py    GIF recorder, text demo, ANSI renderer
+  webapi.py                      FastAPI app for the playable web UI
+train_dqn.py train_ppo.py train_bc.py eval.py
+web/                             playable frontend (vanilla JS/CSS)
+tests/                           54 tests incl. 10k-state mask≡legal check
+benchmarks/deals.json            fixed benchmark (seeds 0–999)
+checkpoints/                     best committed checkpoints
+results/                         eval JSONs + learning curve
+recordings/                      GIF evidence
 ```
 
 Docs: `RULES.md` · `ACTION_SCHEMA.md` · `REWARDS.md` · `HEURISTIC.md` ·
 `DECISIONS.md` · `EVIDENCE.md` · `REFERENCES.md` · `ANALYSIS.md`
 
-## Recordings
+## Why this repo exists
 
-`recordings/` — real masked-policy episodes rendered from env state:
-
-| GIF | Policy | Deal | Outcome |
-|-----|--------|------|---------|
-| `ppo_win_seed118.gif` … `seed639` | MaskablePPO, compact POMDP | benchmark seeds 118/47/211/37/275/639 | win (6×) |
-| `ppo_perfect_win_seed{211,191}.gif` | MaskablePPO, perfect-info | benchmark 211/191 | win |
-| `dqn_concede_seed14.gif` | masked DQN | benchmark 14 | concede (learned resignation) |
+Klondike is NP-complete (Yan et al., 2009) and has no well-maintained
+Gymnasium env — this repo is a small, readable, reproducible baseline: a
+correct engine, an honest benchmark, and measured results for masked DQN and
+MaskablePPO, including what *didn't* work. CPU/laptop-scale only; see
+`REFERENCES.md` for the literature.

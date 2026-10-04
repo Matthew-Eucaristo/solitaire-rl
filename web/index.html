@@ -15,10 +15,12 @@
       <option value="draw3">Draw 3</option>
     </select>
     <input id="seed" type="number" placeholder="seed (random)" title="deal seed — same seed, same deal">
-    <button id="newGame" class="primary">New deal</button>
-    <button id="undo" title="take back the last move">Undo</button>
-    <button id="hint" title="highlight a suggested move">Hint</button>
+    <button id="newGame" class="primary" title="deal a fresh game (N)">New deal</button>
+    <button id="undo" title="take back the last move (U)">Undo</button>
+    <button id="hint" title="highlight a suggested move (H)">Hint</button>
+    <button id="auto" title="let the heuristic finish when only safe moves remain">Auto</button>
     <button id="concede" class="danger" title="resign this deal">Concede</button>
+    <button id="mute" title="toggle sound">🔊</button>
   </div>
   <div class="agent">
     <select id="agentPolicy" title="which agent watches"></select>
@@ -32,6 +34,7 @@
   <span>moves <b id="stMoves">0</b></span>
   <span>foundations <b id="stFound">0/52</b></span>
   <span>redeals <b id="stRedeals">0</b></span>
+  <span>time <b id="stTime">0:00</b></span>
   <span id="stAgent" class="agent-status"></span>
 </div>
 

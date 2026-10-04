@@ -21,6 +21,73 @@ let S = null;              // last serialized state
 let watching = false;
 let watchTimer = null;
 let prevRects = new Map(); // card id -> rect, for FLIP animation
+let dealStart = Date.now();
+let timeTimer = null;
+
+/* ---------------- sfx (synthesized, no assets) ---------------- */
+
+const sfx = (() => {
+  let ctx = null;
+  let muted = localStorage.getItem("klondike.muted") === "1";
+  const ac = () => (ctx = ctx || new (window.AudioContext || window.webkitAudioContext)());
+  const tone = (freq, dur, type = "triangle", gain = 0.12, delay = 0) => {
+    if (muted) return;
+    try {
+      const c = ac(), o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.value = freq;
+      g.gain.setValueAtTime(gain, c.currentTime + delay);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + delay + dur);
+      o.connect(g).connect(c.destination);
+      o.start(c.currentTime + delay); o.stop(c.currentTime + delay + dur);
+    } catch {}
+  };
+  const swish = (dur = 0.09, gain = 0.05) => {
+    if (muted) return;
+    try {
+      const c = ac(), n = c.sampleRate * dur, buf = c.createBuffer(1, n, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+      const src = c.createBufferSource(), g = c.createGain(), f = c.createBiquadFilter();
+      f.type = "bandpass"; f.frequency.value = 1800;
+      g.gain.value = gain;
+      src.buffer = buf; src.connect(f).connect(g).connect(c.destination);
+      src.start();
+    } catch {}
+  };
+  return {
+    get muted() { return muted; },
+    toggle() { muted = !muted; localStorage.setItem("klondike.muted", muted ? "1" : "0"); return muted; },
+    unlock() { try { ac().resume(); } catch {} },
+    flip: () => swish(0.09, 0.06),
+    draw: () => { tone(340, 0.06, "square", 0.05); swish(0.05, 0.03); },
+    found: () => { tone(880, 0.12, "sine", 0.1); tone(1320, 0.1, "sine", 0.06, 0.05); },
+    place: () => tone(520, 0.07, "triangle", 0.08),
+    bad: () => tone(140, 0.16, "sawtooth", 0.08),
+    deal: () => { for (let i = 0; i < 7; i++) swish(0.04, 0.02), tone(600 + i * 40, 0.03, "square", 0.015, i * 0.045); },
+    win: () => [523, 659, 784, 1046, 1318].forEach((f, i) => tone(f, 0.35, "triangle", 0.12, i * 0.12)),
+    lose: () => { tone(220, 0.3, "sine", 0.1); tone(165, 0.4, "sine", 0.1, 0.18); },
+    concede: () => tone(196, 0.25, "sine", 0.08),
+  };
+})();
+
+/* ---------------- confetti on win ---------------- */
+
+function confetti() {
+  const colors = ["#ffd95e", "#4fd2ff", "#ff6b6b", "#7ee081", "#c084fc", "#fff"];
+  for (let i = 0; i < 70; i++) {
+    const p = document.createElement("div");
+    p.className = "confetti";
+    p.style.left = `${45 + Math.random() * 10}%`;
+    p.style.top = "42%";
+    p.style.background = colors[i % colors.length];
+    p.style.setProperty("--dx", `${(Math.random() - 0.5) * 560}px`);
+    p.style.setProperty("--dy", `${-80 - Math.random() * 320}px`);
+    p.style.setProperty("--rot", `${(Math.random() - 0.5) * 720}deg`);
+    p.style.animationDelay = `${Math.random() * 0.15}s`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 2600);
+  }
+}
 
 /* ---------------- rendering ---------------- */
 
@@ -154,6 +221,10 @@ function render(newDeal) {
   $("#stFound").textContent = `${st.foundations_count}/52`;
   $("#stRedeals").textContent = st.redeals;
   $("#undo").disabled = !st.can_undo;
+  $("#auto").disabled = st.outcome !== null || st.facedown > 0;
+  $("#auto").title = st.facedown > 0
+    ? `auto-finish unlocks once all ${st.facedown} face-down cards are revealed`
+    : "let the heuristic finish the remaining safe moves";
   flipAnimate();
   showOutcome(st.outcome);
 }
@@ -179,8 +250,16 @@ function showOutcome(outcome) {
   };
   const [t, sub] = msgs[outcome] || [outcome, ""];
   b.className = outcome === "win" ? "win" : "lose";
-  b.innerHTML = `<div class="card-msg">${t}<div class="sub">${sub}<br>deal ${S.seed} · ${S.moves} moves</div><button class="primary" onclick="newDeal()">New deal</button></div>`;
+  b.innerHTML = `<div class="card-msg">${t}<div class="sub">${sub}<br>deal ${S.seed} · ${S.moves} moves · ${elapsed()}</div><button class="primary" onclick="newDeal()">New deal</button></div>`;
   b.classList.remove("hidden");
+  if (outcome === "win") { sfx.win(); confetti(); }
+  else if (outcome === "concede") sfx.concede();
+  else sfx.lose();
+}
+
+function elapsed() {
+  const s = Math.floor((Date.now() - dealStart) / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
 let toastT = null;
@@ -210,8 +289,14 @@ async function apply(resp, keepWatch) {
 
 async function doMove(desc) {
   try {
-    apply(await post("/api/move", desc));
+    const resp = await post("/api/move", desc);
+    if (desc.kind === K.DRAW) sfx.draw();
+    else if (resp.applied && (resp.applied.kind === K.T2F || resp.applied.kind === K.W2F)) sfx.found();
+    else if (resp.applied && resp.applied.kind === K.T2T && resp.applied.cards && resp.applied.cards.length) sfx.flip();
+    else sfx.place();
+    apply(resp);
   } catch (e) {
+    sfx.bad();
     toast(e.message);
   }
 }
@@ -221,6 +306,8 @@ async function newDeal() {
   const seed = $("#seed").value.trim();
   S = await post("/api/new", { variant: $("#variant").value, seed: seed ? +seed : null });
   setAgentStatus("");
+  dealStart = Date.now();
+  sfx.deal();
   render(true);
 }
 window.newDeal = newDeal;
@@ -329,6 +416,12 @@ async function agentStep() {
   if (!watching || S.outcome) return;
   try {
     const resp = await post("/api/agent/step", { policy: $("#agentPolicy").value });
+    if (resp.applied) {
+      const a = resp.applied;
+      if (a.kind === K.DRAW) sfx.draw();
+      else if (a.kind === K.T2F || a.kind === K.W2F) sfx.found();
+      else if (a.cards && a.cards.length) sfx.flip();
+    }
     apply(resp, true);
     if (resp.applied && resp.applied.cards) {
       resp.applied.cards.forEach((c) => {
@@ -362,6 +455,7 @@ $("#newGame").onclick = newDeal;
 $("#undo").onclick = async () => { try { apply(await post("/api/undo")); } catch (e) { toast(e.message); } };
 $("#concede").onclick = async () => { try { apply(await post("/api/concede")); } catch (e) { toast(e.message); } };
 $("#hint").onclick = async () => {
+  if (watching) return;
   try {
     const { suggested } = await post("/api/agent/hint", { policy: $("#agentPolicy").value });
     if (suggested.concede) { toast(`${$("#agentPolicy").selectedOptions[0].text}: would concede here`); return; }
@@ -374,9 +468,38 @@ $("#hint").onclick = async () => {
 };
 $("#agentToggle").onclick = () => (watching ? stopAgent() : startAgent());
 $("#agentSpeed").oninput = () => { if (watching) { clearTimeout(watchTimer); scheduleAgent(); } };
+$("#auto").onclick = () => {
+  if (watching) return;
+  $("#agentPolicy").value = "heuristic";
+  $("#agentSpeed").value = 1200;
+  startAgent();
+};
+$("#mute").onclick = () => {
+  $("#mute").textContent = sfx.toggle() ? "🔇" : "🔊";
+  if (!sfx.muted) sfx.found();
+};
+
+/* keyboard: Space=draw, U=undo, H=hint, N=new deal, Esc=stop agent */
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input,select") || !S) return;
+  if (e.key === " " && !S.outcome && !watching) { e.preventDefault(); doMove({ kind: K.DRAW }); }
+  else if (e.key === "u" || e.key === "U") { $("#undo").click(); }
+  else if (e.key === "h" || e.key === "H") { $("#hint").click(); }
+  else if (e.key === "n" || e.key === "N") { newDeal(); }
+  else if (e.key === "Escape") { stopAgent(); }
+});
+
+/* first gesture unlocks WebAudio */
+document.addEventListener("pointerdown", () => sfx.unlock(), { once: true });
+
+$("#mute").textContent = sfx.muted ? "🔇" : "🔊";
 
 (async () => {
   await loadPolicies();
   S = await api("/api/state");
+  dealStart = Date.now();
+  timeTimer = setInterval(() => {
+    if (!S.outcome) $("#stTime").textContent = elapsed();
+  }, 1000);
   render(true);
 })();

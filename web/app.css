@@ -164,6 +164,17 @@ main { padding: 20px 22px 60px; max-width: 1100px; margin: 0 auto; }
   from { transform: translate(-30vw, -20vh) rotate(-8deg); opacity: 0; }
 }
 
+.confetti {
+  position: fixed; width: 10px; height: 14px; z-index: 300;
+  border-radius: 2px; pointer-events: none;
+  animation: confetti-fall 2.4s cubic-bezier(.2,.6,.4,1) forwards;
+}
+@keyframes confetti-fall {
+  0%   { transform: translate(0,0) rotate(0); opacity: 1; }
+  40%  { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 1; }
+  100% { transform: translate(calc(var(--dx) * 1.4), 90vh) rotate(calc(var(--rot) * 2)); opacity: 0; }
+}
+
 @media (max-width: 860px) {
   :root { --cw: 62px; --ch: 88px; --gap: 8px; --up-off: 22px; --dn-off: 10px; }
   .card .corner { font-size: 11px; }
