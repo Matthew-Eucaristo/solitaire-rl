@@ -275,3 +275,19 @@ teacher's 0.265. The low-LR continuation also validates the decay
 diagnosis: 6M at lr 1e-4 evals 0.312 where 6M at lr 3e-4 collapsed to
 0.18. Heuristic bar (0.414) is now at 78% reach. Round-2 (clone
 amp1@2.8M → amp2) and peak-continuation launched.
+
+Batch-5 results (same 1000-deal benchmark):
+
+| run | recipe | win_rate |
+|-----|--------|----------|
+| runs/ppo_amp1_6m@2.4M | continue amp1@2.8M at lr 1e-4 (~5.4M total) | **0.328** NEW BEST |
+| runs/ppo_amp1_6m@3.0M | same run, final ckpt (~6M total) | 0.325 |
+| runs/ppo_amp2@2.8M | round-2 fresh init (clone acc 68.7%) | 0.306 |
+| runs/ppo_amp2@3.0M | same run, final | 0.310 |
+
+The amplification loop is converging: continue-from-peak at lr 1e-4
+gains ~+0.004/round (0.324->0.328), while a fresh round-2 init lands
+slightly below its teacher (0.310 vs 0.328) — the clone loses the
+fine-grained residual knowledge. Remaining frontiers: keep chaining
+peak-continuations (amp1_9m launched), and a 512-hidden BC init in case
+capacity is the ceiling (bc_amp1_512 collecting).
