@@ -291,3 +291,20 @@ slightly below its teacher (0.310 vs 0.328) — the clone loses the
 fine-grained residual knowledge. Remaining frontiers: keep chaining
 peak-continuations (amp1_9m launched), and a 512-hidden BC init in case
 capacity is the ceiling (bc_amp1_512 collecting).
+
+Batch-6 results (same 1000-deal benchmark):
+
+| run | recipe | win_rate |
+|-----|--------|----------|
+| runs/ppo_amp1_9m@1.6M | continue 0.328-peak at lr 1e-4 (~8M total) | **0.353** NEW BEST |
+| runs/ppo_amp1_9m@2.8M | same run | 0.352 |
+| runs/ppo_amp1_9m@3.0M | same run, final | 0.339 |
+| runs/ppo_amp1_512@3.0M | fresh 512-hidden BC init (71% acc), lr 1e-4 | 0.287 |
+
+Continue-from-peak chain: 0.265 -> 0.278 -> 0.324 -> 0.328 -> 0.353.
+Doubling capacity (512-hidden net) does NOT beat it: fresh 512 init
+landed at the same 0.28-0.31 band as 256 nets — capacity is not the
+ceiling; trajectory position is. The gain mechanism is cumulative
+on-policy refinement from a good starting point, now at 85% of the
+heuristic bar (0.414). Next chain link (amp1_12m) launched from the
+0.353 checkpoint; eval@100 already hit 0.36 at 0.9M.
