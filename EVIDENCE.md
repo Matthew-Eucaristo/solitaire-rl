@@ -165,3 +165,26 @@ chose on a benchmark deal):
   win GIF for comparison).
 - `dqn_concede_seed14.gif` — the trained DQN voluntarily conceding a
   hopeless deal at move 86 (64/1000 concessions observed in eval).
+
+## Web app (playable UI + agent watch)
+
+```
+$ .venv/bin/python -m pytest -q
+54 passed, 1 warning in 1.97s          # +8 webapi tests (test_webapi.py)
+
+$ .venv/bin/python -m uvicorn solitaire_rl.webapi:app --port 8080
+# verified interactively in Chrome:
+#   - stock click draws; waste updates (moves=1)
+#   - double-click A♣ -> foundation applied (1/52)
+#   - drag 2♥ -> 3♠ column applied, next card revealed
+#   - "Watch" with MaskablePPO on deal 284 played a full live game to
+#     WIN: 104 moves, 52/52 foundations (seed 284 is a benchmark win in
+#     results/m3_ppo_6m.json)
+#   - deal 47 under the 6M checkpoint ended no_progress_cycle @78 —
+#     consistent: the recorded seed-47 win belongs to the 3M checkpoint
+```
+
+API: `GET /api/state` `POST /api/new|/api/move|/api/undo|/api/concede`
+`POST /api/agent/step|/api/agent/hint` `GET /api/agent/policies`.
+Hidden cards/stock order are never serialized — the UI is a legal POMDP
+client. Files: `src/solitaire_rl/webapi.py`, `web/{index.html,app.css,app.js}`.

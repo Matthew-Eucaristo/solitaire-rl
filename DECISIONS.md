@@ -22,3 +22,4 @@ alternative and why the default was picked.
 | D15 | `no_progress_idle` budget | 150 moves | Generous enough not to kill winning trajectories (~230 avg moves/heuristic win); tight enough to end hopeless loops. |
 | D16 | CI | ubuntu-latest only, `uv sync --extra dev --frozen`, ruff + pytest | Brief §0; runtime well under 2 min. |
 | D17 | Dependencies beyond the brief | `pillow`, `matplotlib`, `tensorboard` | GIF recordings (user requirement: ≥5 solve videos), learning-curve figures, PPO's TB logging. All light; nothing heavier added. |
+| D18 | Web app stack | FastAPI + uvicorn serving the Python engine itself; vanilla JS/CSS UI in `web/` | Zero rules duplication — no JS engine port that could diverge from the tested engine. Agent steps rebuild the policy's env by replaying the game's action history with the policy's own obs variant, so watch-mode is identical to eval. Deps added beyond the brief: `fastapi`, `uvicorn`, `httpx` (dev). |

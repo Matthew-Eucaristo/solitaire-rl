@@ -43,6 +43,22 @@ are always seeds ≥ 1,000,000 — the two sets are disjoint by construction.
 
 Dashes fill in as M2/M3 complete; per-run JSONs live in `results/`.
 
+## Play in the browser (or watch the agents)
+
+```
+.venv/bin/python -m uvicorn solitaire_rl.webapi:app --port 8080
+```
+
+Open http://localhost:8080 — a full Klondike UI on the **same engine** the
+tests and evals run (no JS rules port): drag & drop, double-click to
+foundation, undo, hints, concede, draw-1/draw-3, seeded deals. The "Watch"
+button lets a chosen agent (heuristic / masked DQN / MaskablePPO /
+perfect-info PPO) take over the live board — its env is rebuilt by replaying
+the game's action history with the policy's own obs variant, so agents see
+exactly what they were trained on. Winning seeds to try with PPO: 284, 118,
+161, 211. (See `src/solitaire_rl/webapi.py` + `web/`; FastAPI+uvicorn are the
+only added deps, recorded in DECISIONS.md.)
+
 ## Layout
 
 ```
