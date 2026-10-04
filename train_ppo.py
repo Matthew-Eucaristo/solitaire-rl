@@ -87,6 +87,13 @@ def main() -> None:
         default=None,
         help="resume training from a saved MaskablePPO model (e.g. runs/ppo_x/ppo_final)",
     )
+    ap.add_argument(
+        "--net-arch",
+        type=int,
+        nargs="+",
+        default=[256, 256],
+        help="hidden layers of the policy net (must match --bc-init dims)",
+    )
     args = ap.parse_args()
 
     if args.load and args.bc_init:
@@ -119,7 +126,7 @@ def main() -> None:
         model = MaskablePPO(
             "MlpPolicy",
             venv,
-        policy_kwargs={"net_arch": [256, 256]},
+        policy_kwargs={"net_arch": args.net_arch},
         n_steps=args.n_steps,
         batch_size=args.batch_size,
         n_epochs=args.n_epochs,
