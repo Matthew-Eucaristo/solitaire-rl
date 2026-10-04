@@ -20,6 +20,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from solitaire_rl.actions import ACTION_CONCEDE
 from solitaire_rl.dqn import build_q, masked_argmax
 from solitaire_rl.env import KlondikeEnv
 from solitaire_rl.evaluator import play_episode
@@ -157,7 +158,12 @@ def main() -> None:
         e = eps(step)
         legal_mask = env.action_masks()
         if rng.random() < e:
-            action = int(rng.choice(np.flatnonzero(legal_mask)))
+            # Explore game moves only: CONCEDE stays in the mask for the
+            # greedy policy but is never taken by epsilon exploration —
+            # uniformly sampling it would end most episodes in a few steps.
+            pool = np.flatnonzero(legal_mask)
+            pool = pool[pool != ACTION_CONCEDE]
+            action = int(rng.choice(pool))
         else:
             with torch.no_grad():
                 qs = q(torch.as_tensor(obs).unsqueeze(0).to(args.device))[0]
