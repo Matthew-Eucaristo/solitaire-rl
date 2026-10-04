@@ -10,8 +10,7 @@ heuristic baseline.
 ## Play it in your browser
 
 ```bash
-uv sync --extra dev
-.venv/bin/python -m uvicorn solitaire_rl.webapi:app --port 8080
+./run_web.sh    # one command: uv syncs deps, then serves on :8080
 ```
 
 Open http://localhost:8080 — a complete Klondike game running on the **same
