@@ -11,7 +11,8 @@ from `results/*.json` — every claim traces to `EVIDENCE.md`.
 | heuristic | — | 0.414 | 0.118 | ~231 / ~128 |
 | masked DQN (250k) | compact | 0.058 | — | ~110 |
 | MaskablePPO (3M) | compact | 0.116 | — | ~85 |
-| MaskablePPO (3M) | compact_perfect | ~0.16–0.20 | — | — |
+| MaskablePPO (6M) | compact | 0.118 | — | ~86 |
+| MaskablePPO (6M) | compact_perfect | 0.177 | — | ~90 |
 
 All RL numbers are greedy masked evaluations on the fixed benchmark; the
 training curves in `runs/*/metrics.csv` are reproduced in

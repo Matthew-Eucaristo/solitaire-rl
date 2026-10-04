@@ -38,7 +38,8 @@ are always seeds ≥ 1,000,000 — the two sets are disjoint by construction.
 | heuristic | — | **0.414** | **0.118** |
 | masked DQN (250k steps) | compact | 0.058 | — |
 | MaskablePPO (3M steps) | compact | 0.116 | — |
-| MaskablePPO (3M steps) | compact_perfect | ~0.16–0.20 | — |
+| MaskablePPO (6M steps) | compact | 0.118 | — |
+| MaskablePPO (6M steps) | compact_perfect | 0.177 | — |
 
 Dashes fill in as M2/M3 complete; per-run JSONs live in `results/`.
 
@@ -59,3 +60,13 @@ recordings/                         GIF episodes of trained agents
 
 Docs: `RULES.md` · `ACTION_SCHEMA.md` · `REWARDS.md` · `HEURISTIC.md` ·
 `DECISIONS.md` · `EVIDENCE.md` · `REFERENCES.md` · `ANALYSIS.md`
+
+## Recordings
+
+`recordings/` — real masked-policy episodes rendered from env state:
+
+| GIF | Policy | Deal | Outcome |
+|-----|--------|------|---------|
+| `ppo_win_seed118.gif` … `seed639` | MaskablePPO, compact POMDP | benchmark seeds 118/47/211/37/275/639 | win (6×) |
+| `ppo_perfect_win_seed{211,191}.gif` | MaskablePPO, perfect-info | benchmark 211/191 | win |
+| `dqn_concede_seed14.gif` | masked DQN | benchmark 14 | concede (learned resignation) |

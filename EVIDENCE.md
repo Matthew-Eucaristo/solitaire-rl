@@ -129,6 +129,24 @@ Committed: `results/m3_ppo.json`.
 A `compact_perfect` run (perfect information, M4-style stretch) reached
 0.20 eval@100 at 2.7M steps — see ANALYSIS.md for the comparison.
 
+## Extensions (resumed +3M each via `train_ppo.py --load`)
+
+```
+$ .venv/bin/python eval.py --policy ppo:runs/ppo_compact2/ppo_final \
+    --deals 1000 --variant draw1 --obs compact --jobs 8
+  deals=1000  wins=118  win_rate=0.1180   # plateau: same as 3M
+  outcomes={'no_progress_cycle': 882, 'win': 118}
+
+$ .venv/bin/python eval.py --policy ppo:runs/ppo_perfect2/ppo_final \
+    --deals 1000 --variant draw1 --obs compact_perfect --jobs 8
+  deals=1000  wins=177  win_rate=0.1770
+  outcomes={'no_progress_cycle': 823, 'win': 177}
+```
+
+Committed: `results/m3_ppo_6m.json`, `results/m4_ppo_perfect.json`.
+Both curves oscillated flat through the second 3M — a real plateau, not
+truncated learning.
+
 ## Recordings
 
 `recordings/` contains GIF episodes rendered by `record.py` directly from
