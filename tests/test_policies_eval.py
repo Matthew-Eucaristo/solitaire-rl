@@ -117,3 +117,33 @@ def test_load_policy_ens_spec():
     env.reset(seed=0)
     a = p.act(env)
     assert env.action_masks()[a]
+
+
+def test_run_eval_portfolio():
+    """portfolio: runs every member on every deal and reports the best
+    observable outcome per deal with member attribution."""
+    kw = {"variant": "draw1", "obs_variant": "pomdp"}
+    spec = "portfolio:heuristic,heuristic"
+    summary = run_eval(spec, list(range(10)), kw, jobs=1)
+    assert summary["n_deals"] == 10
+    assert summary["portfolio"]["members"] == ["heuristic", "heuristic"]
+    for r in summary["results"]:
+        assert r["member_index"] in (0, 1)
+    # identical members: per-deal result must equal the single-member result
+    solo = run_eval("heuristic", list(range(10)), kw, jobs=1)
+    assert [r["outcome"] for r in summary["results"]] == [
+        r["outcome"] for r in solo["results"]
+    ]
+    assert summary["win_rate"] == solo["win_rate"]
+
+
+def test_portfolio_key_ordering():
+    from solitaire_rl.evaluator import _portfolio_key
+
+    win = EpisodeResult(0, "win", 100, 52, 0, 0, 1.0)
+    rich = EpisodeResult(0, "truncated", 400, 40, 2, 1, 1.0)
+    long_ = EpisodeResult(0, "no_progress_cycle", 450, 10, 5, 2, 1.0)
+    short = EpisodeResult(0, "no_moves", 1, 0, 7, 0, 1.0)
+    assert _portfolio_key(win) > _portfolio_key(rich)
+    assert _portfolio_key(rich) > _portfolio_key(long_)
+    assert _portfolio_key(long_) > _portfolio_key(short)

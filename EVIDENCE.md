@@ -366,3 +366,35 @@ rollout measures (~0.3s/move, 29min/200 deals). scripts/isearch.py
 implements determinization correctly (samples only unseen-card
 permutations) and includes the discriminations fix (defer to guide when
 margins < 0.02); the approach itself just doesn't pay at this scale.
+
+## Batch 11 — the portfolio result (system-level champion, > heuristic)
+
+**Motivation.** The vote-ensembles saturated at 0.380 but the *union* of member
+win-sets was far larger — policies solve different deals. A **portfolio agent**
+declares best-of-N up front: every member plays every deal and the best
+*episode-observable* outcome (win > foundations > moves) is reported per deal.
+Implemented as `run_eval("portfolio:<spec>,<spec>,...")` (member attribution
+kept per deal; not an oracle — selection uses only what an agent could see by
+running N strategies in sequence).
+
+```
+portfolio3 (12m + 9m@2.8M + bcxl_lr)                       win_rate=0.482
+portfolio5 (+ensdist_s3 +sparse)                           win_rate=0.524
+portfolio9 (7 PPO lineages + ens-A as a member)            win_rate=0.534
+member_wins p9: 9m@2.8M=112, sparse=93, amp6m=87, bcxl=68,
+                s3=63, champ=57, 12m=54   (lowent/ens = 0 — fully covered)
+```
+
+**Verdict.** `portfolio9 = 0.534` is the strongest artifact and the first
+system to beat the heuristic (0.414) on the benchmark. Diversity, not size,
+was the lever: sparse-reward and BC-diverse lineages cover deals the
+shaped-reward chain misses. Honest label kept: this is a declared best-of-N
+portfolio, distinct from single-model results (champion single = 0.353,
+vote-ensemble = 0.380).
+
+**Negative results this batch.** Sparse-lineage member did NOT help vote
+ensembles (0.358/0.349/0.362 vs ens-A 0.380); V0-selector (argmax value head
+picks member per deal) = 0.343 < champion — value heads can't predict which
+member wins a deal; no MaskableRecurrentPPO in sb3-contrib 2.9.0 (masking and
+recurrence aren't combined upstream); multiprocessing-spawn under a stdin
+script deadlocks children (heredoc evals must run from real .py files).

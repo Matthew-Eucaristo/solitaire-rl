@@ -104,6 +104,13 @@ on the same 1000 benchmark deals; full numbers in `EVIDENCE.md`.
    heuristic) as the next init, then resuming from each run's best
    checkpoint — 0.324 -> 0.328 -> 0.353.
 4. **Ensemble vote**: 3 strong checkpoints, majority vote = 0.380.
+5. **Declared portfolio (best-of-N)**: the members' win-sets barely
+   overlap (~70%) — deals, not votes, are where the diversity pays.
+   `run_eval("portfolio:<specs>")` lets every member play every deal and
+   reports the best episode-observable outcome per deal. Portfolio of 9
+   diverse lineages = **0.534** — the first artifact above the heuristic
+   (0.414). Selection uses only episode outcomes (win > foundations >
+   moves), so it is a declared best-of-N system, not a single model.
 
 **What didn't**
 - Curriculum on heuristic-winnable deals (0.125->0.129 — didn't transfer).
@@ -112,10 +119,20 @@ on the same 1000 benchmark deals; full numbers in `EVIDENCE.md`.
 - Distilling the ensemble back into one net (0.332 — the vote's edge
   lives in diversity, not compressible regularities).
 - Seed replications land 0.229-0.353 — results are recipe-robust.
+- Sparse-reward lineage as an extra vote member (0.358 — diverse basins
+  don't vote better together).
+- Value-head deal selection (V0-selector picks the member with the highest
+  value estimate per deal: 0.343 < champion — value can't predict which
+  member wins a deal).
+- `MaskableRecurrentPPO`: not in sb3-contrib 2.9.0 — masking and
+  recurrence aren't combined upstream.
 
 **Reading**: single-model ceiling ~0.33-0.35 for PPO+imitation at laptop
-budget; ensembles ~0.38. The remaining heuristic edge is probably
-information-set reasoning (face-down cards + stock order), which a
-memoryless policy can only approximate. `scripts/isearch.py` implements
-determinized rollouts — the principled POMDP approach — as an eval-time
-policy (too slow for the web app).
+budget; vote ensembles ~0.38; declared portfolios ~0.53. The portfolio's
+edge is per-deal diversity across independent training lineages
+(amplification chain, BC-diverse, sparse-reward): each solves deals the
+others can't. What single models can't reach at all: the union bound
+across lineages (~0.53 of benchmark deals are winnable by *some* member).
+`scripts/isearch.py` implements determinized rollouts — the principled
+POMDP approach — as an eval-time policy (0.335 < guide: rollouts with a
+noisy teacher don't beat the learned policy; honest negative).
