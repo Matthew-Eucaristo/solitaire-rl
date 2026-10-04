@@ -476,3 +476,25 @@ heuristic itself as a member = 0.636 (heuristic covers 346 wins RL never
 reaches — symmetric complementarity). Self-inflicted failure logged: a
 `pkill -f "python -"` killed vec-env children of running trainings;
 resume-from-ckpt recovered all three runs.
+
+## Batch 13 — campaign close: portfolio25 = 0.620 pure-RL / 0.640 all-methods
+
+Three last diversity lineages (3M each): divF (champion-clone init,
+seed 31) = 0.314, divG (gamma 0.999, seed 37) = 0.330, divH (sparse
+reward + heuristic-clone init, seed 41) = 0.171.
+
+```
+portfolio25 — pure RL (every trained checkpoint)      win_rate=0.620
+portfolio26 — all-methods (+ heuristic member)        win_rate=0.640
+```
+
+Marginal return is now ~+2 deals per new lineage — the union is
+saturating at ~0.62-0.64 of the 1000-deal benchmark. That is the honest
+frontier of this campaign: the remaining ~36-38% are deals no trained
+lineage (nor the heuristic) can solve — consistent with draw-1 Klondike's
+expected unsolvable fraction plus genuinely hard solvable deals the
+budget can't reach.
+
+Final leaderboard (all same 1000 deals): single-model champion 0.353,
+vote-ensemble 0.380, heuristic 0.414, **declared pure-RL portfolio
+0.620**, all-methods portfolio 0.640, canonical committed-8 0.571.
