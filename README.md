@@ -42,7 +42,9 @@ watch is exactly what was benchmarked. Winning deals to try with PPO:
 | PPO + BC warm-start (3M) | compact + hint | 26.5% | — |
 | PPO amplified chain (~8M) | compact + hint | 35.3% | — |
 | Ensemble vote ×3 | compact + hint | 38.0% | — |
-| **Portfolio ×20** (best-of-N, declared) | compact + hint | **60.3%** | — |
+| **Portfolio ×22 RL** (best-of-N, declared) | compact + hint | **61.4%** | — |
+| Portfolio + heuristic member | compact + hint | 63.6% | — |
+| Portfolio ×8 (committed ckpts) | compact + hint | 57.1% | — |
 
 Every number comes from `eval.py` on the same fixed deal set — never a
 random sample. Training deals are always seeds ≥ 1,000,000, so train and
@@ -56,8 +58,9 @@ behavior-clone the heuristic into the policy net (Tanh, shape-matched),
 keep the expert's chosen action visible as observation features, then run
 low-LR continue-from-peak chains — 0.118 → 0.353 single-model, 0.380 with
 a 3-vote ensemble. The strongest artifact is a **declared portfolio agent**:
-twenty policy lineages each play every deal and the best observable
-episode is reported — 60.3%, comfortably above the heuristic bar. The
+twenty-two policy lineages each play every deal and the best observable
+episode is reported — 61.4% with trained models only (63.6% counting
+the heuristic itself as a member), comfortably above the heuristic bar. The
 RL agents also learned to *concede* hopeless deals on their own. Full
 experiment log: `EVIDENCE.md`.
 

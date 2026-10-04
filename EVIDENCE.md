@@ -446,3 +446,33 @@ divA alone adds the most: 54 attributed wins, incl. deals no member covers
 Verdict: coverage scales with lineage count; even a 0.29 member buys
 unique deals. Best-of-N artifact = 0.603. New hard-pool / ent-0.02 /
 ensA-init lineages in flight for the next increment.
+
+## Batch 12 — final numbers + committed canonical portfolio
+
+Three more lineages (2M resumes after a self-inflicted pkill of the first
+attempt's vec-env workers — recorded honestly): divD (ensA-clone init,
+seed 17) = 0.315, divHard (hard-deal seed pool, seed 27) = 0.295,
+divE (ent_coef 0.02, seed 23) = 0.304.
+
+```
+portfolio22 — pure RL (every trained checkpoint)      win_rate=0.614
+portfolio23 — all-methods (+ heuristic member)        win_rate=0.636
+portfolio8  — canonical (only committed checkpoints)  win_rate=0.571
+```
+
+The **canonical committed portfolio** (spec, every member lives in
+`checkpoints/` so a clean checkout reproduces it):
+
+```
+portfolio:ppo:checkpoints/ppo_amp1_9m_1p6m.zip,ppo:checkpoints/ppo_divC.zip,
+ppo:checkpoints/ppo_divD.zip,ppo:checkpoints/ppo_sparse.zip,
+ppo:checkpoints/ppo_amp512.zip,ppo:checkpoints/ppo_bcxl.zip,
+ppo:checkpoints/ppo_bcxllr6m.zip,ppo:checkpoints/ppo_hintbc.zip
+→ 0.571 (members: 57–85 attributed wins each)
+```
+
+Reading: pure-RL best-of-N = 0.614 (+48% over heuristic's 0.414); adding the
+heuristic itself as a member = 0.636 (heuristic covers 346 wins RL never
+reaches — symmetric complementarity). Self-inflicted failure logged: a
+`pkill -f "python -"` killed vec-env children of running trainings;
+resume-from-ckpt recovered all three runs.
