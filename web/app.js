@@ -220,7 +220,9 @@ function render(newDeal) {
   $("#stMoves").textContent = st.moves;
   $("#stFound").textContent = `${st.foundations_count}/52`;
   $("#stRedeals").textContent = st.redeals;
-  $("#undo").disabled = !st.can_undo;
+  $("#seed").placeholder = st.seed;
+  $("#undo").disabled = !st.can_undo || (watching && !st.outcome);
+  $("#concede").disabled = watching || st.outcome !== null;
   $("#auto").disabled = st.outcome !== null || st.facedown > 0;
   $("#auto").title = st.facedown > 0
     ? `auto-finish unlocks once all ${st.facedown} face-down cards are revealed`
@@ -277,6 +279,7 @@ async function apply(resp, keepWatch) {
   const wasWatching = watching;
   S = resp;
   render();
+  if (resp.moves === 0 && !watching) setAgentStatus("");
   if (resp.applied) {
     const a = resp.applied;
     const name = a.concede ? "concede"
@@ -452,8 +455,14 @@ function stopAgent() {
 /* ---------------- wiring ---------------- */
 
 $("#newGame").onclick = newDeal;
-$("#undo").onclick = async () => { try { apply(await post("/api/undo")); } catch (e) { toast(e.message); } };
-$("#concede").onclick = async () => { try { apply(await post("/api/concede")); } catch (e) { toast(e.message); } };
+$("#undo").onclick = async () => {
+  if (watching && !S.outcome) return;
+  try { apply(await post("/api/undo")); } catch (e) { toast(e.message); }
+};
+$("#concede").onclick = async () => {
+  if (watching || S.outcome) return;
+  try { apply(await post("/api/concede")); } catch (e) { toast(e.message); }
+};
 $("#hint").onclick = async () => {
   if (watching) return;
   try {
