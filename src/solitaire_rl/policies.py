@@ -225,10 +225,27 @@ class MaskedArgmaxPolicy:
         return self._predict(env)
 
 
+class EnsemblePolicy:
+    """Majority vote over member policies (all sharing the env's obs).
+
+    Voting beats every member when members are comparably strong —
+    measured +0.027 win rate on the 1000-deal benchmark (see EVIDENCE.md
+    batch-8). Weak members hurt; ensemble only the top checkpoints.
+    """
+
+    def __init__(self, members: list) -> None:
+        self._members = members
+
+    def act(self, env: KlondikeEnv) -> int:
+        votes = [p.act(env) for p in self._members]
+        return max(set(votes), key=votes.count)
+
+
 def load_policy(spec: str, env_kwargs: dict, seed: int = 0):
     """Build a policy from a spec string.
 
     spec: ``random`` | ``heuristic`` | ``dqn:<path>`` | ``ppo:<path>``
+    | ``ens:<spec>,<spec>,...`` (majority-vote ensemble)
     """
     if spec == "random":
         return RandomPolicy(seed=seed)
@@ -242,4 +259,7 @@ def load_policy(spec: str, env_kwargs: dict, seed: int = 0):
         from solitaire_rl.ppo_wrap import PPOPolicy
 
         return PPOPolicy.load(spec[4:], env_kwargs)
+    if spec.startswith("ens:"):
+        members = [load_policy(s, env_kwargs, seed) for s in spec[4:].split(",")]
+        return EnsemblePolicy(members)
     raise ValueError(f"unknown policy spec {spec!r}")

@@ -88,3 +88,32 @@ def test_render_text_contains_cards():
     txt = env.render()
     assert "STK" in txt and "FDN" in txt
     assert any(ch in txt for ch in "♣♦♥♠")
+
+
+def test_ensemble_policy_majority():
+    """EnsemblePolicy returns the majority vote of its members."""
+    from solitaire_rl.policies import EnsemblePolicy
+
+    class Fixed:
+        def __init__(self, a):
+            self.a = a
+
+        def act(self, env):
+            return self.a
+
+    ens = EnsemblePolicy([Fixed(3), Fixed(3), Fixed(7)])
+    assert ens.act(None) == 3
+    ens2 = EnsemblePolicy([Fixed(1), Fixed(2), Fixed(2)])
+    assert ens2.act(None) == 2
+
+
+def test_load_policy_ens_spec():
+    """ens: spec composes members via load_policy (heuristic x3 here —
+    identical votes, exercises the plumbing without checkpoint IO)."""
+    from solitaire_rl.policies import load_policy
+
+    p = load_policy("ens:heuristic,heuristic,heuristic", {})
+    env = KlondikeEnv()
+    env.reset(seed=0)
+    a = p.act(env)
+    assert env.action_masks()[a]

@@ -49,6 +49,20 @@ _AGENT_POLICIES: dict[str, dict[str, Any]] = {
         "spec": "ppo:checkpoints/ppo_perfect_6m.zip",
         "env": {"obs_variant": "compact_perfect"},
     },
+    "ppo_amp": {
+        "label": "PPO amplified — best single model (35.3%)",
+        "spec": "ppo:checkpoints/ppo_amp1_9m_1p6m.zip",
+        "env": {"obs_variant": "compact_hint"},
+    },
+    "ens": {
+        "label": "Ensemble vote x3 — best artifact (38.0%)",
+        "spec": (
+            "ens:ppo:checkpoints/ppo_amp1_9m_1p6m.zip,"
+            "ppo:checkpoints/ppo_amp1_9m_2p8m.zip,"
+            "ppo:checkpoints/ppo_amp1_12m.zip"
+        ),
+        "env": {"obs_variant": "compact_hint"},
+    },
 }
 
 

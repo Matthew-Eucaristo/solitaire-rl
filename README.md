@@ -37,9 +37,11 @@ watch is exactly what was benchmarked. Winning deals to try with PPO:
 | random_legal | — | 0.0% | 0.0% |
 | **heuristic** (rule-based) | — | **41.4%** | **11.8%** |
 | masked DQN (250k steps) | compact | 5.8% | — |
-| MaskablePPO (3M steps) | compact POMDP | 11.6% | — |
 | MaskablePPO (6M steps) | compact POMDP | 11.8% | — |
 | MaskablePPO (6M steps) | compact, perfect info | 17.7% | — |
+| PPO + BC warm-start (3M) | compact + hint | 26.5% | — |
+| PPO amplified chain (~8M) | compact + hint | 35.3% | — |
+| **Ensemble vote ×3** | compact + hint | **38.0%** | — |
 
 Every number comes from `eval.py` on the same fixed deal set — never a
 random sample. Training deals are always seeds ≥ 1,000,000, so train and
@@ -47,11 +49,13 @@ benchmark sets are disjoint by construction. Per-run JSONs in `results/`,
 learning curve in `results/m2_dqn_curve.png`.
 
 The honest takeaway (see `ANALYSIS.md`): Klondike is brutal for generic deep
-RL at laptop scale — sparse rewards, hidden cards, long horizons. The
-heuristic wins; the RL agents learned to *concede* hopeless deals (they
-discovered resignation on their own) and PPO reaches ~12–18%. The biggest
-unlock was observation design: the 49k-dim one-hot encoding trained to 0.0%
-at any budget, while the 132-dim compact encoding produced wins immediately.
+RL at laptop scale — sparse rewards, hidden cards, long horizons. Plain PPO
+plateaus at ~12%, but **imitation-anchored PPO closes most of the gap**:
+behavior-clone the heuristic into the policy net (Tanh, shape-matched),
+keep the expert's chosen action visible as observation features, then run
+low-LR continue-from-peak chains — 0.118 → 0.353 single-model, 0.380 with
+a 3-vote ensemble (92% of the heuristic bar). The RL agents also learned
+to *concede* hopeless deals on their own. Full experiment log: `EVIDENCE.md`.
 
 ## Quick look
 

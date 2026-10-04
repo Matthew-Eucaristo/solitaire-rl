@@ -85,3 +85,37 @@ Two mechanisms, both measured:
 2. The environment *itself* ends hopeless loops (`no_progress_cycle`,
    `no_progress_idle`, `no_moves`) — so every loss is still bounded and
    honestly reported instead of a policy churning forever.
+
+## Improvement campaign (post-M3, October 4)
+
+Goal: close the 0.118 -> 0.414 gap. Nine experiment batches, all measured
+on the same 1000 benchmark deals; full numbers in `EVIDENCE.md`.
+
+**What worked**
+1. **Imitation anchoring**: encode the heuristic's chosen action as
+   observation features (`compact_hint`, 142-dim) AND warm-start the
+   actor from a shape-matched behavior clone (Tanh — the earlier ReLU
+   clone was the documented warm-start failure). Either alone: ~0.11-0.14.
+   Together: 0.265.
+2. **Low LR (1e-4) + strong attractor**: every lr=3e-4 run decayed after
+   ~3M steps (0.265->0.180, 0.142->0.127). A 460k-pair/97%-accuracy clone
+   + lr 1e-4 holds and climbs: 0.278.
+3. **Continue-from-peak chains**: cloning the *champion* (not the
+   heuristic) as the next init, then resuming from each run's best
+   checkpoint — 0.324 -> 0.328 -> 0.353.
+4. **Ensemble vote**: 3 strong checkpoints, majority vote = 0.380.
+
+**What didn't**
+- Curriculum on heuristic-winnable deals (0.125->0.129 — didn't transfer).
+- Bigger nets (512-hidden = 0.287 — capacity is not the ceiling).
+- Mixed-observation ensembles (weak voters drag: 0.321).
+- Distilling the ensemble back into one net (0.332 — the vote's edge
+  lives in diversity, not compressible regularities).
+- Seed replications land 0.229-0.353 — results are recipe-robust.
+
+**Reading**: single-model ceiling ~0.33-0.35 for PPO+imitation at laptop
+budget; ensembles ~0.38. The remaining heuristic edge is probably
+information-set reasoning (face-down cards + stock order), which a
+memoryless policy can only approximate. `scripts/isearch.py` implements
+determinized rollouts — the principled POMDP approach — as an eval-time
+policy (too slow for the web app).
