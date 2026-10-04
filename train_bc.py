@@ -21,7 +21,7 @@ import torch
 import torch.nn as nn
 
 from solitaire_rl.env import KlondikeEnv
-from solitaire_rl.policies import HeuristicPolicy
+from solitaire_rl.policies import HeuristicPolicy, load_policy
 
 
 def git_hash() -> str:
@@ -31,9 +31,9 @@ def git_hash() -> str:
         return "unknown"
 
 
-def collect(kw: dict, n_games: int, rng: np.random.Generator):
-    """Play heuristic games; return (obs_list, action_list) pairs."""
-    pol = HeuristicPolicy()
+def collect(kw: dict, n_games: int, rng: np.random.Generator, teacher: str = "heuristic"):
+    """Play teacher games; return (obs_list, action_list) pairs."""
+    pol = HeuristicPolicy() if teacher == "heuristic" else load_policy(teacher, kw)
     xs, ys = [], []
     env = KlondikeEnv(**kw)
     train_seed_lo = 1_000_000  # never benchmark seeds — same rule as RL training
@@ -74,6 +74,13 @@ def main() -> None:
     ap.add_argument("--frame-stack", type=int, default=8)
     ap.add_argument("--device", default="cpu", choices=["cpu", "mps"])
     ap.add_argument("--out", default=None)
+    ap.add_argument(
+        "--teacher",
+        default="heuristic",
+        help="policy to clone: 'heuristic' or any load_policy spec "
+        "(e.g. 'ppo:runs/x/ppo_final.zip') — enables iterated amplification "
+        "(clone the current champion, re-init PPO, improve again).",
+    )
     args = ap.parse_args()
 
     torch.manual_seed(args.seed)
@@ -88,7 +95,7 @@ def main() -> None:
     }
 
     t0 = time.perf_counter()
-    xs, ys = collect(kw, args.games, rng)
+    xs, ys = collect(kw, args.games, rng, args.teacher)
     obs_dim = xs.shape[1]
     print(
         f"collected {len(xs)} (obs,action) pairs from {args.games} games "

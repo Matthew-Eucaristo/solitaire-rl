@@ -239,3 +239,24 @@ PPO can learn residual deviations. Result 0.265 = 2.2× the 0.118
 baseline, above the 0.177 perfect-info model, at HALF its step budget.
 ppo_hint_bc was still climbing (eval@100 hit 0.27) — extension to 6M
 launched.
+
+Batch-3 results (same 1000-deal benchmark):
+
+| run | recipe | win_rate |
+|-----|--------|----------|
+| runs/ppo_hint_bc_6m | hint+BC(82%) init, extended to ~6M (lr 3e-4) | 0.180 (decay) |
+| runs/ppo_hint_bc_curr | hint+BC init, easy-pool curriculum | 0.236 |
+| runs/ppo_hint_bc_s2 | hint+BC init, seed 2 replication | 0.229 |
+| runs/ppo_hint_bcxl | hint+BC(97% attractor, 460k pairs) init, lr 3e-4 | 0.170 |
+| runs/ppo_hint_bcxl_lr | hint+BC(97%) init, lr 1e-4 | **0.278** NEW BEST |
+
+Checkpoint sweep on ppo_hint_bc confirms the ~0.26 plateau is real
+(2.4M=0.214, 2.6M=0.260, 2.8M=0.226, 3.0M=0.265) — not a lucky eval.
+
+Three findings stack: (1) imitation anchoring works (hint obs + Tanh BC
+init); (2) late-training decay is an LR artifact — at lr 3e-4 every run
+peaks ~3M then slides (0.265->0.180, 0.142->0.127); (3) the fix is
+stronger attractor + lower LR: 460k-pair BC clone at 97% acc + lr 1e-4
+holds 0.28-0.33 eval@100 through 3M and evals 0.278 on 1000 deals.
+Round-2 amplification (clone the champion itself — acc 0.60 — as the
+next init) and a low-LR 6M continuation of the champion are in flight.
