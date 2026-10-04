@@ -308,3 +308,17 @@ ceiling; trajectory position is. The gain mechanism is cumulative
 on-policy refinement from a good starting point, now at 85% of the
 heuristic bar (0.414). Next chain link (amp1_12m) launched from the
 0.353 checkpoint; eval@100 already hit 0.36 at 0.9M.
+
+Batch-7 results (same 1000-deal benchmark):
+
+| run | recipe | win_rate |
+|-----|--------|----------|
+| runs/ppo_amp1_12m@2.0M | chain link 4 (~14M total) | 0.348 |
+| runs/ppo_amp1_12m@3.0M | same, final | 0.348 |
+| runs/ppo_amp1_12m@2.8M | same | 0.343 |
+
+Chain has converged at ~0.34-0.35 (eval@100 briefly showed 0.40 —
+100-deal eval noise; always trust the 1000-deal number). The champion
+remains ppo_amp1_9m/ppo_1600000.zip at **0.353**. A low-entropy
+continuation (ent_coef 0.002) is testing whether sharper updates can
+push past the plateau.
