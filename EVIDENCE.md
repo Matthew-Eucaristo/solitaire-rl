@@ -351,3 +351,18 @@ Single-model ceiling confirmed again at ~0.33 — the ensemble's +0.05
 edge doesn't survive 66%-fidelity distillation. The 0.380 ens-A stays
 champion. Chaining the distilled basin (ensdist_6m) and growing the
 voter pool (ensdist_s3) for the next ensemble assembly.
+
+Batch-10 — information-set search (200-deal subset, worlds=6/topk=3/h=120):
+
+| policy | seeds 0-199 |
+|--------|-------------|
+| isearch (determinized heuristic rollouts, guide=champion) | 0.335 |
+| champion alone | 0.345 |
+| heuristic | 0.415 |
+
+Honest negative: sampled-world rollouts do NOT beat the learned policy —
+the champion's trained judgment already exceeds what a fast heuristic
+rollout measures (~0.3s/move, 29min/200 deals). scripts/isearch.py
+implements determinization correctly (samples only unseen-card
+permutations) and includes the discriminations fix (defer to guide when
+margins < 0.02); the approach itself just doesn't pay at this scale.
