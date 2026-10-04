@@ -32,15 +32,25 @@ def git_hash() -> str:
 
 
 def collect(kw: dict, n_games: int, rng: np.random.Generator, teacher: str = "heuristic"):
-    """Play teacher games; return (obs_list, action_list) pairs."""
-    pol = HeuristicPolicy() if teacher == "heuristic" else load_policy(teacher, kw)
+    """Play teacher games; return (obs_list, action_list) pairs.
+
+    teacher: 'heuristic', a load_policy spec, or 'ens:s1,s2,...' for
+    majority-vote ensemble distillation (all voters share kw's obs).
+    """
+    if teacher == "heuristic":
+        pols = [HeuristicPolicy()]
+    elif teacher.startswith("ens:"):
+        pols = [load_policy(s, kw) for s in teacher[4:].split(",")]
+    else:
+        pols = [load_policy(teacher, kw)]
     xs, ys = [], []
     env = KlondikeEnv(**kw)
     train_seed_lo = 1_000_000  # never benchmark seeds — same rule as RL training
     for _ in range(n_games):
         obs, _ = env.reset(seed=int(rng.integers(train_seed_lo, 2**31 - 1)))
         while True:
-            a = pol.act(env)
+            votes = [p.act(env) for p in pols]
+            a = max(set(votes), key=votes.count)
             xs.append(obs.copy())
             ys.append(a)
             obs, _, term, trunc, _ = env.step(a)

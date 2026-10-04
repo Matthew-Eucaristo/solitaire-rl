@@ -322,3 +322,19 @@ Chain has converged at ~0.34-0.35 (eval@100 briefly showed 0.40 —
 remains ppo_amp1_9m/ppo_1600000.zip at **0.353**. A low-entropy
 continuation (ent_coef 0.002) is testing whether sharper updates can
 push past the plateau.
+
+Batch-8 — ensembles (same 1000-deal benchmark, majority vote):
+
+| ensemble | members | win_rate |
+|----------|---------|----------|
+| ens3 | champ(0.353)+12m(0.348)+lowent(0.348) | 0.378 |
+| ens5 | ens3 + amp2 + bcxllr_6m | 0.377 |
+| ens7 | ens5 + hint_bc@2.6M + curr | 0.377 |
+| ens-A | champ + 12m + 9m@2.8M | **0.380** BEST ARTIFACT |
+| mixed5 | 3×hint + perfect-info + compact | 0.321 (weak voters drag) |
+
+Ensembling adds +0.02-0.03 over the best member, saturating ~0.38;
+voters must all be strong (mixed-lineage inclusion of 0.118/0.177
+models hurt). 91% of the heuristic bar now. Next: distill the ensemble
+back into a single net (bc_ensA, acc 0.666) → PPO — iterated
+distill-then-improve. train_bc --teacher now accepts 'ens:s1,s2,…'.
