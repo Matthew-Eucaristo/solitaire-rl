@@ -75,6 +75,7 @@ class KlondikeEnv(gym.Env):
         max_redeals: int | None = None,
         train_seeds: bool = True,
         seed: int | None = None,
+        seed_pool: list[int] | None = None,
     ) -> None:
         super().__init__()
         if variant not in VARIANTS:
@@ -92,6 +93,7 @@ class KlondikeEnv(gym.Env):
         self.max_idle = max_idle
         self.max_redeals = max_redeals
         self.train_seeds = train_seeds
+        self.seed_pool = list(seed_pool) if seed_pool else None
         self._rng = np.random.default_rng(seed)
 
         self.action_space = spaces.Discrete(N_ACTIONS)
@@ -108,6 +110,7 @@ class KlondikeEnv(gym.Env):
         self._seen: set[tuple] = set()
         self._outcome: str | None = None
         self._legal_cache: list[Move] | None = None
+        self._heuristic = None  # lazy HeuristicPolicy for compact_hint obs
 
     # ------------------------------------------------------------------ API
     def reset(self, *, seed: int | None = None, options: dict | None = None):
@@ -116,7 +119,11 @@ class KlondikeEnv(gym.Env):
         if seed is None:
             if not self.train_seeds:
                 raise ValueError("env created with train_seeds=False; pass an explicit seed")
-            seed = int(self._rng.integers(TRAIN_SEED_MIN, 2**31 - 1))
+            seed = (
+                int(self._rng.choice(self.seed_pool))
+                if self.seed_pool
+                else int(self._rng.integers(TRAIN_SEED_MIN, 2**31 - 1))
+            )
         self.deal_seed = seed
         self.state = deal(seed, variant=self.variant, max_redeals=self.max_redeals)
         self._steps = 0
@@ -237,12 +244,20 @@ class KlondikeEnv(gym.Env):
         assert st is not None
         moves = self._legal()
         can_draw = any(m.kind == MoveKind.DRAW for m in moves)
+        hint_action = 0
+        if self.obs_variant == "compact_hint":
+            if self._heuristic is None:
+                from solitaire_rl.policies import HeuristicPolicy
+
+                self._heuristic = HeuristicPolicy()
+            hint_action = self._heuristic.act(self)
         return encode_state(
             st,
             self.obs_variant,
             idle_ratio=self._idle / max(1, self.max_idle),
             has_legal_move=bool(moves),
             can_draw=can_draw,
+            hint_action=hint_action,
         )
 
     def _obs(self) -> np.ndarray:

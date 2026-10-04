@@ -55,10 +55,16 @@ def main() -> None:
     ap.add_argument(
         "--obs",
         default="pomdp",
-        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+        choices=["pomdp", "perfect", "compact", "compact_perfect", "compact_hint"],
     )
     ap.add_argument("--frame-stack", type=int, default=8)
     ap.add_argument("--reward-mode", default="shaped", choices=["shaped", "sparse"])
+    ap.add_argument(
+        "--seed-pool",
+        default=None,
+        help="JSON file with a list of deal seeds; training episodes only draw "
+        "from this pool (curriculum). Omit for the full >=1M seed space.",
+    )
     ap.add_argument("--device", default="cpu", choices=["cpu", "mps"])
     ap.add_argument("--out", default=None)
     ap.add_argument("--n-envs", type=int, default=8)  # parallel env procs
@@ -95,6 +101,12 @@ def main() -> None:
         "reward_mode": args.reward_mode,
         "frame_stack": args.frame_stack,
     }
+    if args.seed_pool:
+        with open(args.seed_pool) as f:
+            pool_data = json.load(f)
+        env_kwargs["seed_pool"] = (
+            pool_data if isinstance(pool_data, list) else pool_data["seeds"]
+        )
     venv = SubprocVecEnv(
         [make_env({**env_kwargs, "seed": args.seed + i}) for i in range(args.n_envs)]
     )

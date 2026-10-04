@@ -50,7 +50,15 @@ COMPACT_POMDP_DIM = (
 COMPACT_PERFECT_EXTRA_DIM = MAX_STOCK + 7 * MAX_DOWN  # = 66
 COMPACT_PERFECT_DIM = COMPACT_POMDP_DIM + COMPACT_PERFECT_EXTRA_DIM  # = 198
 
-OBS_VARIANTS = ("pomdp", "perfect", "compact", "compact_perfect")
+# --- hint encoding -----------------------------------------------------------
+# The deterministic heuristic's chosen action as extra feature dims: the
+# policy sees the expert's suggestion and learns when to deviate from it.
+# kind one-hot (6) + src/6 + dst/6 + run_start/12 = 10 dims.
+HINT_KINDS = 6  # draw, w2t, w2f, t2f, t2t, concede
+HINT_DIM = HINT_KINDS + 3  # = 10
+COMPACT_HINT_DIM = COMPACT_POMDP_DIM + HINT_DIM  # = 142
+
+OBS_VARIANTS = ("pomdp", "perfect", "compact", "compact_perfect", "compact_hint")
 
 
 def obs_dim(variant: str) -> int:
@@ -59,6 +67,7 @@ def obs_dim(variant: str) -> int:
         "perfect": PERFECT_DIM,
         "compact": COMPACT_POMDP_DIM,
         "compact_perfect": COMPACT_PERFECT_DIM,
+        "compact_hint": COMPACT_HINT_DIM,
     }[variant]
 
 
@@ -113,6 +122,38 @@ def _encode_compact(
     return obs
 
 
+def encode_hint(action: int) -> np.ndarray:
+    """Encode an action id (the heuristic's suggestion) as HINT_DIM floats.
+
+    kind one-hot [draw, w2t, w2f, t2f, t2t, concede], then src/dst/run_start
+    normalized to [0, 1] (0 when the kind has no such field).
+    """
+    vec = np.zeros(HINT_DIM, dtype=np.float32)
+    if action == 0:
+        vec[0] = 1.0
+    elif 1 <= action <= 7:
+        vec[1] = 1.0
+        vec[HINT_KINDS + 1] = (action - 1) / 6.0
+    elif action == 8:
+        vec[2] = 1.0
+    elif 9 <= action <= 15:
+        vec[3] = 1.0
+        vec[HINT_KINDS + 0] = (action - 9) / 6.0
+    elif action == 653:
+        vec[5] = 1.0
+    elif 16 <= action < 16 + 7 * 91:
+        vec[4] = 1.0
+        rel = action - 16
+        src, rem = divmod(rel, 91)
+        dst, j = divmod(rem, 13)
+        vec[HINT_KINDS + 0] = src / 6.0
+        vec[HINT_KINDS + 1] = dst / 6.0
+        vec[HINT_KINDS + 2] = j / 12.0
+    else:
+        raise ValueError(f"action {action} out of range")
+    return vec
+
+
 def _write_card(vec: np.ndarray, offset: int, card) -> None:
     idx = offset + (card.id if card is not None else 52)
     vec[idx] = 1.0
@@ -125,10 +166,20 @@ def encode_state(
     idle_ratio: float = 0.0,
     has_legal_move: bool = True,
     can_draw: bool = True,
+    hint_action: int = 0,
 ) -> np.ndarray:
     """Encode `state` as a flat float32 vector in [0, 1] (compact: [-1, 1])."""
     if variant not in OBS_VARIANTS:
         raise ValueError(f"unknown obs variant {variant!r}")
+    if variant == "compact_hint":
+        base = _encode_compact(
+            state,
+            perfect=False,
+            idle_ratio=idle_ratio,
+            has_legal_move=has_legal_move,
+            can_draw=can_draw,
+        )
+        return np.concatenate([base, encode_hint(hint_action)])
     if variant.startswith("compact"):
         return _encode_compact(
             state,

@@ -28,7 +28,7 @@ def main() -> None:
     ap.add_argument(
         "--obs",
         default="pomdp",
-        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+        choices=["pomdp", "perfect", "compact", "compact_perfect", "compact_hint"],
     )
     ap.add_argument("--frame-stack", type=int, default=8)
     ap.add_argument("--reward-mode", default="shaped", choices=["shaped", "sparse"])

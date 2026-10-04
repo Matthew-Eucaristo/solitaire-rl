@@ -20,7 +20,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from solitaire_rl.dqn import build_q
 from solitaire_rl.env import KlondikeEnv
 from solitaire_rl.policies import HeuristicPolicy
 
@@ -58,11 +57,19 @@ def main() -> None:
     ap.add_argument("--batch", type=int, default=256)
     ap.add_argument("--lr", type=float, default=1e-3)
     ap.add_argument("--hidden", type=int, default=256)
+    ap.add_argument(
+        "--activation",
+        default="tanh",
+        choices=["tanh", "relu"],
+        help="activation for the BC net; 'tanh' matches MaskablePPO's policy_net "
+        "so --bc-init is a true warm-start (the earlier ReLU BC was the "
+        "documented warm-start failure mode).",
+    )
     ap.add_argument("--variant", default="draw1", choices=["draw1", "draw3"])
     ap.add_argument(
         "--obs",
         default="pomdp",
-        choices=["pomdp", "perfect", "compact", "compact_perfect"],
+        choices=["pomdp", "perfect", "compact", "compact_perfect", "compact_hint"],
     )
     ap.add_argument("--frame-stack", type=int, default=8)
     ap.add_argument("--device", default="cpu", choices=["cpu", "mps"])
@@ -88,7 +95,14 @@ def main() -> None:
         f"({time.perf_counter() - t0:.0f}s)"
     )
 
-    net = build_q(obs_dim, args.hidden).to(args.device)
+    act = nn.Tanh if args.activation == "tanh" else nn.ReLU
+    net = nn.Sequential(
+        nn.Linear(obs_dim, args.hidden),
+        act(),
+        nn.Linear(args.hidden, args.hidden),
+        act(),
+        nn.Linear(args.hidden, 654),
+    ).to(args.device)
     opt = torch.optim.Adam(net.parameters(), lr=args.lr)
     loss_fn = nn.CrossEntropyLoss()
     n = len(xs)
