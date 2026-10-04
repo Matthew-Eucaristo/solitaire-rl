@@ -414,3 +414,19 @@ Reading: portfolio is the declared best-of-N system, not a single model —
 but it is the strongest honest artifact this campaign produced, and it only
 grows with lineage diversity. Single-model and vote-ensemble ceilings stand
 at 0.353 / 0.380; best-of-N = 0.567.
+
+## Batch 11c — portfolio17 = 0.592
+
+Added the "weak" lineages too (amp2=0.310, amp512=0.287, hintbc=0.265,
+amp1@2.8M=0.324): their win-sets still contain deals nobody else covers.
+
+```
+portfolio17 (every checkpoint on disk incl. weak lineages + ens-A member)
+win_rate = 0.592   — 15 of 17 members score unique wins
+member_wins: sparse=60, 9m28=58, hintbc=56, amp512=51, bcxllr6m=45,
+             amp6m=42, s3final=38, bcxl=38, ensdist6m=35, ensdist=35,
+             s3=32, champ=29, 12m=27, amp1_28=26, amp2=20  (lowent/ensA=0)
+```
+
+Verdict: the portfolio keeps paying for *every* lineage, weak or strong —
+coverage is orthogonal to average strength. Best-of-N artifact = 0.592.

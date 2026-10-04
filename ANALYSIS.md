@@ -107,8 +107,8 @@ on the same 1000 benchmark deals; full numbers in `EVIDENCE.md`.
 5. **Declared portfolio (best-of-N)**: the members' win-sets barely
    overlap (~70%) — deals, not votes, are where the diversity pays.
    `run_eval("portfolio:<specs>")` lets every member play every deal and
-   reports the best episode-observable outcome per deal. Portfolio of 13
-   diverse lineages = **0.567** — the first artifact above the heuristic
+   reports the best episode-observable outcome per deal. Portfolio of 17
+   diverse lineages = **0.592** — the first artifact above the heuristic
    (0.414). Selection uses only episode outcomes (win > foundations >
    moves), so it is a declared best-of-N system, not a single model.
 
@@ -128,11 +128,11 @@ on the same 1000 benchmark deals; full numbers in `EVIDENCE.md`.
   recurrence aren't combined upstream.
 
 **Reading**: single-model ceiling ~0.33-0.35 for PPO+imitation at laptop
-budget; vote ensembles ~0.38; declared portfolios ~0.57. The portfolio's
+budget; vote ensembles ~0.38; declared portfolios ~0.59. The portfolio's
 edge is per-deal diversity across independent training lineages
 (amplification chain, BC-diverse, sparse-reward): each solves deals the
 others can't. What single models can't reach at all: the union bound
-across lineages (~0.57 of benchmark deals are winnable by *some* member).
+across lineages (~0.59 of benchmark deals are winnable by *some* member).
 `scripts/isearch.py` implements determinized rollouts — the principled
 POMDP approach — as an eval-time policy (0.335 < guide: rollouts with a
 noisy teacher don't beat the learned policy; honest negative).
