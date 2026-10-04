@@ -156,5 +156,12 @@ chose on a benchmark deal):
 
 - `ppo_win_seed{118,47,211,37,275,639}.gif` — MaskablePPO winning six
   different benchmark deals (verified `outcome: "win"` in the eval JSON).
+- `ppo_perfect_win_seed{211,191}.gif` — perfect-info PPO wins (M4-style stretch).
+- `heuristic_win_seed{326,191}.gif` — the heuristic baseline winning
+  (seeds chosen from `results/m1_heuristic_draw1.json`).
+- `heuristic_lose_seed0.gif` — heuristic stalling into `no_progress_idle`
+  on seed 0 (it wins 414/1000, not all).
+- `dqn_win_seed{47,718}.gif` — masked DQN wins (seed 47 shared with a PPO
+  win GIF for comparison).
 - `dqn_concede_seed14.gif` — the trained DQN voluntarily conceding a
   hopeless deal at move 86 (64/1000 concessions observed in eval).
