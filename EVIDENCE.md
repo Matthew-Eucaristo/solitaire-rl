@@ -260,3 +260,18 @@ stronger attractor + lower LR: 460k-pair BC clone at 97% acc + lr 1e-4
 holds 0.28-0.33 eval@100 through 3M and evals 0.278 on 1000 deals.
 Round-2 amplification (clone the champion itself — acc 0.60 — as the
 next init) and a low-LR 6M continuation of the champion are in flight.
+
+Batch-4 results (same 1000-deal benchmark):
+
+| run | recipe | win_rate |
+|-----|--------|----------|
+| runs/ppo_amp1@2.8M | clone-of-champion init (60% acc) + lr 1e-4 | **0.324** NEW BEST |
+| runs/ppo_bcxllr_6m | 97% clone init, continued to ~6M at lr 1e-4 | 0.312 |
+| runs/ppo_amp1@3.0M | same run, final ckpt | 0.282 |
+
+Iterated amplification works: cloning the champion (not the heuristic)
+as the next init landed in a better basin — amp1@2.8M = 0.324 vs its
+teacher's 0.265. The low-LR continuation also validates the decay
+diagnosis: 6M at lr 1e-4 evals 0.312 where 6M at lr 3e-4 collapsed to
+0.18. Heuristic bar (0.414) is now at 78% reach. Round-2 (clone
+amp1@2.8M → amp2) and peak-continuation launched.
