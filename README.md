@@ -126,6 +126,8 @@ recordings/                      GIF evidence
 Docs: `RULES.md` · `ACTION_SCHEMA.md` · `REWARDS.md` · `HEURISTIC.md` ·
 `DECISIONS.md` · `EVIDENCE.md` · `RESULTS.md` · `REFERENCES.md` · `ANALYSIS.md`
 
+**Paper draft**: [`paper/main.tex`](paper/main.tex) · compiled [`paper/main.pdf`](paper/main.pdf) — full write-up of methods, results, and analysis.
+
 ## Why this repo exists
 
 Klondike is NP-complete (Yan et al., 2009) and has no well-maintained
