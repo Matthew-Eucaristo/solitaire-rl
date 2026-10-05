@@ -54,11 +54,34 @@ class QRDQNPolicy:
 
     @staticmethod
     def load(path: str, env_kwargs: dict | None = None) -> QRDQNPolicy:
+        if path.endswith(".pt"):
+            return QRDQNPolicy._load_packed(path, env_kwargs)
         from sb3_contrib import QRDQN
 
         model = QRDQN.load(path, device="cpu")
         model.policy.eval()
         return QRDQNPolicy(model)
+
+    @staticmethod
+    def _load_packed(path: str, env_kwargs: dict | None = None) -> QRDQNPolicy:
+        """Load a fp16-packed policy (state_dict without the target net)."""
+        import gymnasium as gym
+        from sb3_contrib.qrdqn.policies import QRDQNPolicy as _SB3QRPolicy
+
+        from solitaire_rl.actions import N_ACTIONS
+
+        ckpt = torch.load(path, map_location="cpu", weights_only=False)
+        env = KlondikeEnv(**(env_kwargs or {}))
+        policy = _SB3QRPolicy(
+            env.observation_space,
+            gym.spaces.Discrete(N_ACTIONS),
+            lr_schedule=lambda _: 0.0,
+            net_arch=ckpt.get("net_arch", [256, 256]),
+        )
+        sd = {k: v.float() for k, v in ckpt["state_dict"].items()}
+        policy.load_state_dict(sd, strict=False)
+        policy.eval()
+        return QRDQNPolicy(_PolicyShim(policy))
 
     def act(self, env: KlondikeEnv) -> int:
         obs = torch.as_tensor(env._obs(), dtype=torch.float32).unsqueeze(0)
@@ -66,3 +89,10 @@ class QRDQNPolicy:
             qm = self.model.policy.quantile_net(obs).mean(dim=1)[0].cpu().numpy()
         qm[~env.action_masks()] = -np.inf
         return int(np.argmax(qm))
+
+
+class _PolicyShim:
+    """Bare policy object exposing `.policy` like an sb3 model for eval."""
+
+    def __init__(self, policy) -> None:
+        self.policy = policy

@@ -42,9 +42,9 @@ watch is exactly what was benchmarked. Winning deals to try with PPO:
 | PPO + BC warm-start (3M) | compact + hint | 26.5% | — |
 | PPO amplified chain (~8M) | compact + hint | 35.3% | — |
 | Ensemble vote ×3 | compact + hint | 38.0% | — |
-| **Portfolio ×25 RL** (best-of-N, declared) | compact + hint | **62.0%** | — |
-| Portfolio + heuristic member | compact + hint | 64.0% | — |
-| Portfolio ×8 (committed ckpts) | compact + hint | 57.1% | — |
+| **Portfolio ×26 RL** (best-of-N, declared) | compact + hint | **62.5%** | — |
+| Portfolio + heuristic member | compact + hint | 64.5% | — |
+| Portfolio ×9 (committed ckpts) | compact + hint | 57.8% | — |
 
 Every number comes from `eval.py` on the same fixed deal set — never a
 random sample. Training deals are always seeds ≥ 1,000,000, so train and

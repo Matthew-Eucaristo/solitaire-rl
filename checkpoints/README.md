@@ -15,19 +15,22 @@
 | `ppo_bcxl.zip` | BC-XL clone lineage | 0.278 |
 | `ppo_bcxllr6m.zip` | BC-XL 6M lineage | 0.312 |
 | `ppo_hintbc.zip` | hint-obs + BC lineage | 0.265 |
+| `qrdqn_400000.pt` | MaskableQRDQN, hint obs @400k (fp16-packed, target net dropped) | 0.067 |
 
 Load a single model via
 `eval.py --policy ppo:checkpoints/ppo_amp1_9m_1p6m.zip --obs compact_hint`
 (`--obs compact` / `compact_perfect` for the original three).
 
-## Canonical portfolio (best-of-N, declared) — 0.571
+## Canonical portfolio (best-of-N, declared) — 0.578
 
 ```bash
 .venv/bin/python eval.py --obs compact_hint --deals 1000 --jobs 4 --policy \
-  'portfolio:ppo:checkpoints/ppo_amp1_9m_1p6m.zip,ppo:checkpoints/ppo_divC.zip,ppo:checkpoints/ppo_divD.zip,ppo:checkpoints/ppo_sparse.zip,ppo:checkpoints/ppo_amp512.zip,ppo:checkpoints/ppo_bcxl.zip,ppo:checkpoints/ppo_bcxllr6m.zip,ppo:checkpoints/ppo_hintbc.zip'
+  'portfolio:ppo:checkpoints/ppo_amp1_9m_1p6m.zip,ppo:checkpoints/ppo_divC.zip,ppo:checkpoints/ppo_divD.zip,ppo:checkpoints/ppo_sparse.zip,ppo:checkpoints/ppo_amp512.zip,ppo:checkpoints/ppo_bcxl.zip,ppo:checkpoints/ppo_bcxllr6m.zip,ppo:checkpoints/ppo_hintbc.zip,qrdqn:checkpoints/qrdqn_400000.pt'
 ```
 
 Every member plays every deal; the best episode-observable outcome (win >
 foundations > moves) is reported per deal — a declared best-of-N system.
-The full 22-member pure-RL portfolio (members live under the gitignored
-`runs/`) reached 0.614; adding `heuristic` as a member reaches 0.636.
+0.578 = union-verified: 571 canonical-8 wins + 7 deals the QRDQN member wins
+that no other member does. The full 25-member pure-RL portfolio (members
+under the gitignored `runs/`) reached 0.620 (0.625 including QRDQN); adding
+`heuristic` as a member reaches 0.640 (0.645 with QRDQN).

@@ -514,3 +514,14 @@ Not added to the portfolio (zero coverage).
 1000-deal evals of peak ckpts: ppo_600000 = **0.349**, ppo_1400000 = **0.349**,
 ppo_1000000 = 0.344 — all ≈ champion 0.353 (within noise). The
 continue-from-peak chain has saturated at ~0.35; this was the last link.
+
+`python train_qrdqn.py --steps 1200000 --obs compact_hint --frame-stack 8` →
+runs/qrdqn_hint. Trajectory: 0.0→0.06→0.04→0.07@400k → collapse to ~0.0
+from 600k on (value estimates diverge into a losing attractor — the
+documented bootstrap limitation: next-state masks not in the replay buffer).
+1000-deal eval of peak ckpt qrdqn_400000: **0.067** — 67 wins, of which 5
+are disjoint from the ×25 portfolio win-set (seeds 247, 280, 466, 651, 898)
+and 7 from canonical-8 (63, 234, 247, 280, 466, 651, 898).
+Union math (exact for wins — a member win always keys first): ×26 RL =
+0.625, +heuristic = 0.645, canonical-9 = 0.578. Committed ckpt +
+canonical spec updated; canonical-9 portfolio eval verifying.
