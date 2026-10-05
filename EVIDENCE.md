@@ -508,3 +508,9 @@ runs/dqn_hint_1m — 18,390 episodes, 82 training wins, eps 0.05.
 Negative result: hint-obs does not rescue the value-based family at this
 budget — the original 250k-step compact DQN (0.058) remains the best DQN.
 Not added to the portfolio (zero coverage).
+
+`python train_ppo.py --steps 2000000 --load runs/ppo_amp1_12m/ppo_final --lr 1e-4`
+→ runs/ppo_amp1_15m. In-run eval@100 peaked 0.39@600k then decayed to 0.28@2M.
+1000-deal evals of peak ckpts: ppo_600000 = **0.349**, ppo_1400000 = **0.349**,
+ppo_1000000 = 0.344 — all ≈ champion 0.353 (within noise). The
+continue-from-peak chain has saturated at ~0.35; this was the last link.
