@@ -49,20 +49,25 @@ watch is exactly what was benchmarked. Winning deals to try with PPO:
 Every number comes from `eval.py` on the same fixed deal set — never a
 random sample. Training deals are always seeds ≥ 1,000,000, so train and
 benchmark sets are disjoint by construction. Per-run JSONs in `results/`,
-learning curve in `results/m2_dqn_curve.png`.
+all charts in `results/figs/`.
 
-The honest takeaway (see `ANALYSIS.md`): Klondike is brutal for generic deep
-RL at laptop scale — sparse rewards, hidden cards, long horizons. Plain PPO
-plateaus at ~12%, but **imitation-anchored PPO closes most of the gap**:
-behavior-clone the heuristic into the policy net (Tanh, shape-matched),
-keep the expert's chosen action visible as observation features, then run
-low-LR continue-from-peak chains — 0.118 → 0.353 single-model, 0.380 with
-a 3-vote ensemble. The strongest artifact is a **declared portfolio agent**:
-twenty-five policy lineages each play every deal and the best observable
-episode is reported — 62.0% with trained models only (64.0% counting
-the heuristic itself as a member), comfortably above the heuristic bar. The
-RL agents also learned to *concede* hopeless deals on their own. Full
-experiment log: `EVIDENCE.md`.
+![Final leaderboard](results/figs/leaderboard.png)
+![Training curves](results/figs/training_curves.png)
+![Why the portfolio wins](results/figs/portfolio_diversity.png)
+
+The honest takeaway (see `RESULTS.md` for per-experiment pro/contra and
+`ANALYSIS.md`): Klondike is brutal for generic deep RL at laptop scale —
+sparse rewards, hidden cards, long horizons. Plain PPO plateaus at ~12%,
+but **imitation-anchored PPO closes most of the gap**: behavior-clone the
+heuristic into the policy net (Tanh, shape-matched), keep the expert's
+chosen action visible as observation features, then run low-LR
+continue-from-peak chains — 0.118 → 0.353 single-model, 0.380 with a
+3-vote ensemble. The strongest artifact is a **declared portfolio agent**:
+twenty-six policy lineages each play every deal and the best observable
+episode is reported — 62.5% with trained models only (64.5% counting the
+heuristic itself as a member), comfortably above the heuristic bar. The RL
+agents also learned to *concede* hopeless deals on their own. Full
+experiment log: `EVIDENCE.md`, `RESULTS.md`.
 
 ## Quick look
 
@@ -119,7 +124,7 @@ recordings/                      GIF evidence
 ```
 
 Docs: `RULES.md` · `ACTION_SCHEMA.md` · `REWARDS.md` · `HEURISTIC.md` ·
-`DECISIONS.md` · `EVIDENCE.md` · `REFERENCES.md` · `ANALYSIS.md`
+`DECISIONS.md` · `EVIDENCE.md` · `RESULTS.md` · `REFERENCES.md` · `ANALYSIS.md`
 
 ## Why this repo exists
 
