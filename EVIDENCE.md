@@ -498,3 +498,13 @@ budget can't reach.
 Final leaderboard (all same 1000 deals): single-model champion 0.353,
 vote-ensemble 0.380, heuristic 0.414, **declared pure-RL portfolio
 0.620**, all-methods portfolio 0.640, canonical committed-8 0.571.
+
+## Batch 14 — wave-14: DQN family on hint obs
+
+`python train_dqn.py --steps 1000000 --obs compact_hint --frame-stack 8` →
+runs/dqn_hint_1m — 18,390 episodes, 82 training wins, eps 0.05.
+`run_eval dqn:runs/dqn_hint_1m/q_final.pt` on 1000 benchmark deals:
+**win_rate = 0.000** (eval@100 during training also converged to 0.0).
+Negative result: hint-obs does not rescue the value-based family at this
+budget — the original 250k-step compact DQN (0.058) remains the best DQN.
+Not added to the portfolio (zero coverage).
