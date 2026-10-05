@@ -523,5 +523,5 @@ documented bootstrap limitation: next-state masks not in the replay buffer).
 are disjoint from the ×25 portfolio win-set (seeds 247, 280, 466, 651, 898)
 and 7 from canonical-8 (63, 234, 247, 280, 466, 651, 898).
 Union math (exact for wins — a member win always keys first): ×26 RL =
-0.625, +heuristic = 0.645, canonical-9 = 0.578. Committed ckpt +
-canonical spec updated; canonical-9 portfolio eval verifying.
+0.625, +heuristic = 0.645, canonical-9 = **0.579 measured** (qrdqn member +8 net). Committed ckpt +
+canonical-9 portfolio eval measured 0.579 (qrdqn member: 64 wins, +8 net vs canonical-8).

@@ -21,7 +21,7 @@ Load a single model via
 `eval.py --policy ppo:checkpoints/ppo_amp1_9m_1p6m.zip --obs compact_hint`
 (`--obs compact` / `compact_perfect` for the original three).
 
-## Canonical portfolio (best-of-N, declared) — 0.578
+## Canonical portfolio (best-of-N, declared) — 0.579
 
 ```bash
 .venv/bin/python eval.py --obs compact_hint --deals 1000 --jobs 4 --policy \
@@ -30,7 +30,7 @@ Load a single model via
 
 Every member plays every deal; the best episode-observable outcome (win >
 foundations > moves) is reported per deal — a declared best-of-N system.
-0.578 = union-verified: 571 canonical-8 wins + 7 deals the QRDQN member wins
-that no other member does. The full 25-member pure-RL portfolio (members
+0.579 measured: 571 canonical-8 wins + 8 net deals from the QRDQN member
+(the fp16-packed member wins 64 solo, including wins fp32 missed). The full 25-member pure-RL portfolio (members
 under the gitignored `runs/`) reached 0.620 (0.625 including QRDQN); adding
 `heuristic` as a member reaches 0.640 (0.645 with QRDQN).

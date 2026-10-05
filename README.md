@@ -44,7 +44,7 @@ watch is exactly what was benchmarked. Winning deals to try with PPO:
 | Ensemble vote ×3 | compact + hint | 38.0% | — |
 | **Portfolio ×26 RL** (best-of-N, declared) | compact + hint | **62.5%** | — |
 | Portfolio + heuristic member | compact + hint | 64.5% | — |
-| Portfolio ×9 (committed ckpts) | compact + hint | 57.8% | — |
+| Portfolio ×9 (committed ckpts) | compact + hint | 57.9% | — |
 
 Every number comes from `eval.py` on the same fixed deal set — never a
 random sample. Training deals are always seeds ≥ 1,000,000, so train and
