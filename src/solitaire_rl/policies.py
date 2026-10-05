@@ -245,7 +245,7 @@ def load_policy(spec: str, env_kwargs: dict, seed: int = 0):
     """Build a policy from a spec string.
 
     spec: ``random`` | ``heuristic`` | ``dqn:<path>`` | ``ppo:<path>``
-    | ``ens:<spec>,<spec>,...`` (majority-vote ensemble)
+    | ``qrdqn:<path>`` | ``ens:<spec>,<spec>,...`` (majority-vote ensemble)
     """
     if spec == "random":
         return RandomPolicy(seed=seed)
@@ -259,6 +259,10 @@ def load_policy(spec: str, env_kwargs: dict, seed: int = 0):
         from solitaire_rl.ppo_wrap import PPOPolicy
 
         return PPOPolicy.load(spec[4:], env_kwargs)
+    if spec.startswith("qrdqn:"):
+        from solitaire_rl.qrdqn import QRDQNPolicy
+
+        return QRDQNPolicy.load(spec[6:], env_kwargs)
     if spec.startswith("ens:"):
         members = [load_policy(s, env_kwargs, seed) for s in spec[4:].split(",")]
         return EnsemblePolicy(members)
