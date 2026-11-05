@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>solitaire-rl: reinforcement-learning agents that learn Klondike Solitaire</title>
+<meta name="description" content="Masked DQN and MaskablePPO agents learn Klondike Solitaire from state vectors with legal-move masking, scored on 1000 fixed deals against a deterministic heuristic (41.4%). Best single policy 35.3%, declared best-of-26 portfolio 62.5%.">
+<meta name="theme-color" content="#0d1117">
+<meta name="color-scheme" content="dark light">
+<link rel="canonical" href="https://matthew-eucaristo.github.io/solitaire-rl/">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="solitaire-rl">
+<meta property="og:title" content="solitaire-rl: agents that learn Klondike from raw game state">
+<meta property="og:description" content="1000 fixed deals, one deterministic heuristic at 41.4%. Best single trained policy 35.3%, declared best-of-26 portfolio 62.5%. Every number from a committed eval run.">
+<meta property="og:url" content="https://matthew-eucaristo.github.io/solitaire-rl/">
+<meta property="og:image" content="https://matthew-eucaristo.github.io/solitaire-rl/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A finished Klondike board won by MaskablePPO on benchmark deal 47, beside the headline win rates">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  "name": "solitaire-rl",
+  "description": "Reinforcement-learning agents that learn Klondike Solitaire from raw game state, evaluated on 1000 fixed deals against a deterministic heuristic baseline.",
+  "url": "https://matthew-eucaristo.github.io/solitaire-rl/",
+  "codeRepository": "https://github.com/Matthew-Eucaristo/solitaire-rl",
+  "programmingLanguage": "Python",
+  "license": "https://opensource.org/licenses/MIT"
+}
+</script>
+<script>document.documentElement.classList.add("js")</script>
+<script src="deals.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#result">Skip to the results</a>
+
+<header class="bar">
+  <a class="wordmark" href="./" aria-label="solitaire-rl home">solitaire-rl</a>
+  <nav aria-label="Sections">
+    <a href="#deals">Deals</a>
+    <a href="#method">Method</a>
+    <a href="#results">Results</a>
+    <a href="#recordings">Recordings</a>
+    <a href="#reproduce">Reproduce</a>
+  </nav>
+  <a class="btn" href="https://github.com/Matthew-Eucaristo/solitaire-rl">View on GitHub</a>
+</header>
+
+<main>
+<section class="hero" aria-labelledby="hero-title">
+  <h1 id="hero-title">Agents that learn Klondike from raw game state</h1>
+  <p class="hero-sub">Masked DQN and MaskablePPO read state vectors, never pixels, pick only legal moves, and are scored on the same 1000 fixed deals as a deterministic heuristic.</p>
+  <div class="doors">
+    <a class="door" href="#method">
+      <video class="rec" data-rec="ppo_win_seed47" aria-label="MaskablePPO playing benchmark deal 47 to a win, every move a masked action" width="466" height="380" muted loop playsinline controls preload="metadata" poster="rec/ppo_win_seed47.jpg"><source src="rec/ppo_win_seed47.mp4" type="video/mp4"></video>
+      <span class="door-name">MaskablePPO wins deal 47</span>
+      <span class="door-line">Compact POMDP observation. How it learned →</span>
+    </a>
+    <a class="door" href="#benchmark">
+      <video class="rec" data-rec="heuristic_win_seed326" aria-label="The rule-based heuristic baseline playing benchmark deal 326 to a win" width="466" height="380" muted loop playsinline controls preload="metadata" poster="rec/heuristic_win_seed326.jpg"><source src="rec/heuristic_win_seed326.mp4" type="video/mp4"></video>
+      <span class="door-name">The heuristic wins deal 326</span>
+      <span class="door-line">The rule-based bar it is measured against →</span>
+    </a>
+  </div>
+</section>
+
+<section class="result" id="result" aria-labelledby="result-title">
+  <h2 id="result-title" class="vh">Headline result</h2>
+  <p class="figures">On the same <b>1000&nbsp;deals</b>, the rule-based heuristic wins <b>41.4%</b>. The best single trained policy wins <b>35.3%</b>; a declared best-of-26 portfolio, <b>62.5%</b>.</p>
+  <p class="figures-note">Portfolio means every member plays every deal and the best episode-observable outcome is reported (win, then foundations, then moves): a declared best-of-N system, not one model. A per-move vote of three models reaches 38.0%. With the heuristic as a member the portfolio reaches 64.5%; the nine committed checkpoints alone measure 57.9%. Plain MaskablePPO plateaus at 11.8%.</p>
+</section>
+
+<section class="deals" id="deals" aria-labelledby="deals-title">
+  <div class="deals-text">
+    <h2 id="deals-title">All 1000 deals, one cell each</h2>
+    <p>The benchmark is seeds 0 to 999, fixed in <code>benchmarks/deals.json</code>; training only ever deals seeds from 1,000,000 up. Light a policy to see which deals it won, or pick a deal to see how every policy did on it.</p>
+    <div class="layers" role="radiogroup" aria-label="Policy shown on the field" id="layers"></div>
+    <p class="count" id="count" aria-live="polite"></p>
+    <p class="legend" id="legend"></p>
+    <noscript><p>This field needs JavaScript. The same numbers are in the results table below and in <code>results/*.json</code>.</p></noscript>
+  </div>
+  <canvas class="field" id="field" role="img" aria-label="The 1000 benchmark deals" data-ui></canvas>
+  <div class="inspect" data-ui>
+    <div class="pick">
+      <label for="seed">Deal</label>
+      <button type="button" class="step" id="prev" aria-label="Previous deal">‹</button>
+      <input id="seed" type="number" inputmode="numeric" min="0" max="999" value="47">
+      <button type="button" class="step" id="next" aria-label="Next deal">›</button>
+    </div>
+    <table class="per-deal" id="perdeal">
+      <caption class="vh">How each policy did on the selected deal</caption>
+      <tbody></tbody>
+    </table>
+  </div>
+  <div class="deal-rec" id="dealrec" data-ui></div>
+</section>
+
+<section class="method" id="method" aria-labelledby="method-title">
+  <h2 id="method-title" class="vh">How the win rate climbed</h2>
+  <div class="split">
+    <div class="split-text">
+      <h3 class="stage-clause" id="clause" aria-live="polite">Plain MaskablePPO plateaus</h3>
+      <p class="stage-body" id="stagebody">Compact 132-dim observation, six million steps on CPU. Three million more steps changed nothing. Perfect information, the upper bound of what seeing every hidden card adds, reaches only 17.7%: observability is not the main bottleneck.</p>
+    </div>
+    <div class="split-ui" data-ui>
+      <div class="meter" id="meter" role="img" aria-label="Win rate 11.8% against the heuristic's 41.4%">
+        <div class="meter-scale"><span>0%</span><span>70%</span></div>
+        <div class="meter-track">
+          <div class="meter-fill" id="meterfill" style="--v:11.8"></div>
+          <div class="meter-bar" style="--v:41.4"><span>heuristic 41.4%</span></div>
+        </div>
+        <p class="meter-value"><b id="metervalue">11.8%</b> <span id="metersub">MaskablePPO, 6M steps, compact POMDP</span></p>
+        <ul class="meter-facts" id="meterfacts">
+          <li>Action masking: every legal move is reachable, illegal moves never are</li>
+          <li>Losses are overwhelmingly no_progress_cycle</li>
+          <li>One-hot 49k-dim observation: 0.000, untrainable at this budget</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="stages">
+    <label for="stage" class="vh">Stage of the campaign</label>
+    <input type="range" id="stage" min="0" max="4" step="1" value="0" list="stage-ticks">
+    <datalist id="stage-ticks"><option value="0"></option><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option></datalist>
+    <ol class="stage-names" id="stagenames">
+      <li data-i="0">Plain PPO</li>
+      <li data-i="1">Imitation anchor</li>
+      <li data-i="2">Peak chains</li>
+      <li data-i="3">Vote of three</li>
+      <li data-i="4">Portfolio</li>
+    </ol>
+  </div>
+  <figure class="curves">
+    <img src="fig/training_curves.png" width="1300" height="715" loading="lazy" alt="Training curves: win rate on 100-deal evals against training steps for each lineage; the amp chain runs between 0.3 and 0.4, curriculum PPO climbs slowly to about 0.13, QRDQN and masked DQN on hint obs stay near zero">
+    <figcaption>Training curves, 100-deal evals during training. The final numbers on this page are 1000-deal evals; a single 100-deal eval briefly showed 0.40 for a run that measures 0.348 on all 1000.</figcaption>
+  </figure>
+</section>
+
+<section class="results" id="results" aria-labelledby="results-title">
+  <h2 id="results-title">Every number, the same 1000 deals</h2>
+  <div class="table-scroll">
+  <table class="lineup">
+    <thead><tr><th scope="col">Policy</th><th scope="col">Observation</th><th scope="col">Draw-1</th><th scope="col">Draw-3</th></tr></thead>
+    <tbody>
+      <tr><td>random_legal</td><td>none</td><td>0.0%</td><td>0.0%</td></tr>
+      <tr class="bar-row"><td>heuristic (rule-based)</td><td>none</td><td>41.4%</td><td>11.8%</td></tr>
+      <tr><td>masked DQN, 250k steps</td><td>compact</td><td>5.8%</td><td>not run</td></tr>
+      <tr><td>MaskablePPO, 6M steps</td><td>compact POMDP</td><td>11.8%</td><td>not run</td></tr>
+      <tr><td>MaskablePPO, 6M steps</td><td>compact, perfect info</td><td>17.7%</td><td>not run</td></tr>
+      <tr><td>PPO + BC warm-start, 3M</td><td>compact + hint</td><td>26.5%</td><td>not run</td></tr>
+      <tr><td>PPO amplified chain, about 8M</td><td>compact + hint</td><td>35.3%</td><td>not run</td></tr>
+      <tr><td>Ensemble vote of 3</td><td>compact + hint</td><td>38.0%</td><td>not run</td></tr>
+      <tr class="top-row"><td>Portfolio of 26 RL, best-of-N, declared</td><td>compact + hint</td><td>62.5%</td><td>not run</td></tr>
+      <tr><td>Portfolio + heuristic member</td><td>compact + hint</td><td>64.5%</td><td>not run</td></tr>
+      <tr><td>Portfolio of 9 committed checkpoints</td><td>compact + hint</td><td>57.9%</td><td>not run</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <h3 class="part">What did not work</h3>
+  <div class="table-scroll">
+  <table class="lineup lineup-neg">
+    <thead><tr><th scope="col">Experiment</th><th scope="col">Result</th><th scope="col">Reading</th></tr></thead>
+    <tbody>
+      <tr><td>One-hot 49k-dim observation, DQN and PPO</td><td>0.000</td><td>Untrainable at laptop budget; the compact 132-dim code made it trainable</td></tr>
+      <tr><td>Masked Double-DQN on hint obs, 1M steps</td><td>0.000</td><td>The new recipe does not rescue the value-based family</td></tr>
+      <tr><td>MaskableQRDQN, distributional</td><td>0.067 at 400k</td><td>Then collapses to about 0; the bootstrap max is unmasked. Still adds deals to the portfolio</td></tr>
+      <tr><td>Curriculum on heuristic-winnable deals</td><td>0.129</td><td>Overfits the easy subset; no benefit on the benchmark</td></tr>
+      <tr><td>BC warm-start alone, Tanh</td><td>0.142</td><td>Warm start does not stick without the hint observation</td></tr>
+      <tr><td>Bigger net, 512 by 2</td><td>0.287</td><td>Capacity is not the bottleneck, trajectory position is</td></tr>
+      <tr><td>Mixed-observation vote</td><td>0.321</td><td>Weak voters drag the vote down</td></tr>
+      <tr><td>Ensemble distilled into one student</td><td>0.332</td><td>The vote's edge lives in diversity, not in compressible regularities</td></tr>
+      <tr><td>Determinized rollout search, seeds 0 to 199</td><td>0.335</td><td>Worse than the raw policy (0.345 there); sampled hidden cards add noise</td></tr>
+      <tr><td>Value-head member selector</td><td>0.343</td><td>Value cannot predict which member wins a deal</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figure class="board">
+    <img src="fig/leaderboard.png" width="1170" height="780" loading="lazy" alt="Final leaderboard bar chart of win rates on the 1000 fixed deals, from random at 0.0% up to the portfolio plus heuristic at 64.5%, with the heuristic at 41.4%">
+    <figcaption>The final leaderboard from <code>results/figs/leaderboard.png</code>. Gold bars are declared portfolios, grey is the heuristic, blue are single policies and the vote.</figcaption>
+  </figure>
+</section>
+
+<section class="recordings" id="recordings" aria-labelledby="recordings-title">
+  <h2 id="recordings-title">Recorded on benchmark deals</h2>
+  <p class="rec-intro">Rendered from environment state by <code>record.py</code>. The agent never sees these frames, only its observation vector; every frame is a masked action the policy chose. Point at or tap a tile to play it.</p>
+  <ul class="tiles">
+    <li class="tile">
+      <video class="rec" data-rec="champ_win_seed47" aria-label="The single-model champion winning deal 47" width="466" height="380" muted loop playsinline controls preload="none" poster="rec/champ_win_seed47.jpg"><source src="rec/champ_win_seed47.mp4" type="video/mp4"></video>
+      <div class="strip s1"><p><span>Deal 47</span><span>Win</span></p><p>Single-model champion, 35.3%</p></div>
+    </li>
+    <li class="tile">
+      <video class="rec" data-rec="dqn_win_seed47" aria-label="Masked DQN winning deal 47" width="466" height="380" muted loop playsinline controls preload="none" poster="rec/dqn_win_seed47.jpg"><source src="rec/dqn_win_seed47.mp4" type="video/mp4"></video>
+      <div class="strip s2"><p><span>Deal 47</span><span>Win</span></p><p>Masked DQN, 5.8%</p></div>
+    </li>
+    <li class="tile">
+      <video class="rec" data-rec="x_portfolio_win2_seed105_divA" aria-label="Portfolio member divA winning deal 105" width="466" height="380" muted loop playsinline controls preload="none" poster="rec/x_portfolio_win2_seed105_divA.jpg"><source src="rec/x_portfolio_win2_seed105_divA.mp4" type="video/mp4"></video>
+      <div class="strip s3"><p><span>Deal 105</span><span>Win</span></p><p>Portfolio member divA</p></div>
+    </li>
+    <li class="tile">
+      <video class="rec" data-rec="sparse_win_seed105_champ_loses" aria-label="The sparse-reward lineage winning deal 105, a deal the champion loses" width="466" height="380" muted loop playsinline controls preload="none" poster="rec/sparse_win_seed105_champ_loses.jpg"><source src="rec/sparse_win_seed105_champ_loses.mp4" type="video/mp4"></video>
+      <div class="strip s4"><p><span>Deal 105</span><span>Win</span></p><p>Sparse-reward lineage; the champion loses it</p></div>
+    </li>
+    <li class="tile">
+      <video class="rec" data-rec="dqn_concede_seed14" aria-label="Masked DQN conceding hopeless deal 14" width="466" height="380" muted loop playsinline controls preload="none" poster="rec/dqn_concede_seed14.jpg"><source src="rec/dqn_concede_seed14.mp4" type="video/mp4"></video>
+      <div class="strip s2"><p><span>Deal 14</span><span>Concede</span></p><p>Masked DQN resigns a hopeless deal on its own</p></div>
+    </li>
+    <li class="tile">
+      <video class="rec" data-rec="champ_lose_seed0" aria-label="The single-model champion losing deal 0 to a no-progress cycle" width="466" height="380" muted loop playsinline controls preload="none" poster="rec/champ_lose_seed0.jpg"><source src="rec/champ_lose_seed0.mp4" type="video/mp4"></video>
+      <div class="strip s1"><p><span>Deal 0</span><span>No-progress cycle</span></p><p>Single-model champion, an honest loss</p></div>
+    </li>
+  </ul>
+</section>
+
+<section class="local" id="play" aria-labelledby="play-title">
+  <figure class="local-shot">
+    <img src="web-ui.jpg" width="1200" height="466" loading="lazy" alt="The playable Klondike web UI on deal 284: draw-1, the tableau dealt, and a Watch control set to MaskablePPO, 6M steps">
+  </figure>
+  <div class="local-text">
+    <h2 id="play-title">Play it on your machine</h2>
+    <p>The playable game is a FastAPI app over the same Python rules engine the tests and evals use; there is deliberately no JavaScript port of the rules that could drift. That is why it runs locally and not on this page. Drag and drop, undo, hint, draw-1 or draw-3, seeded deals.</p>
+    <p><b>Watch</b> hands the live board to the heuristic, masked DQN, MaskablePPO or perfect-info PPO, rebuilding the policy's own observation from the game's action history, so what you watch is what was benchmarked. Deals PPO wins: 284, 118, 161, 211.</p>
+    <pre><code># uv syncs deps on first run
+./run_web.sh
+# then open http://localhost:8080</code></pre>
+  </div>
+</section>
+
+<section class="setup" id="benchmark" aria-labelledby="setup-title">
+  <h2 id="setup-title">The benchmark and the choices behind it</h2>
+  <div class="cols">
+    <dl class="facts">
+      <div><dt>Deals</dt><dd>1000, seeds 0 to 999, fixed in <code>benchmarks/deals.json</code>. Draw-1 is the headline variant; draw-3 is implemented too.</dd></div>
+      <div><dt>Training seeds</dt><dd>1,000,000 and up, so training and benchmark deals are disjoint by construction.</dd></div>
+      <div><dt>Actions</dt><dd>Discrete(654): draw, waste, foundation and every tableau move, plus <code>CONCEDE</code>. The mask equals the legal moves plus concede, tested on 10,000 random states.</dd></div>
+      <div><dt>Observation</dt><dd>Compact 132 dims (142 with the hint), frame stack of 8. Stock order and face-down cards stay hidden.</dd></div>
+      <div><dt>Episodes</dt><dd>Capped at 500 actions; end on a win, a concede, no moves, a repeated board or 150 moves without progress.</dd></div>
+      <div><dt>Evaluation</dt><dd><code>eval.py</code>, greedy masked play on all 1000 deals; one JSON per run in <code>results/</code>.</dd></div>
+      <div><dt>Compute</dt><dd>One laptop CPU, Apple silicon, 8 cores. No GPU, no distributed training.</dd></div>
+    </dl>
+    <ul class="decisions">
+      <li><b>Concede is always legal.</b> An agent can resign even when moves remain; the trained DQN resigned 64 of 1000 deals in its continuation eval.</li>
+      <li><b>The random baseline never concedes.</b> The interesting floor is a random player that does not quit on purpose. It wins 0 of 1000.</li>
+      <li><b>Cycle detection sees the full board,</b> stock order included, but never feeds it to the observation; POMDP correctness is tested.</li>
+      <li><b>DQN is hand-rolled Double-DQN</b> with the mask applied at sampling and target time, so the argmax never picks an illegal move.</li>
+      <li><b>150 idle moves end an episode:</b> enough not to cut off winning games (about 230 moves per heuristic win), tight enough to end loops.</li>
+      <li><b>The web app serves the Python engine itself</b>, so there is zero rules duplication between what you play and what was measured.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="repro" id="reproduce" aria-labelledby="repro-title">
+  <h2 id="repro-title">Reproduce it</h2>
+  <div class="repro-rows">
+    <p>Python 3.11 or newer and <a href="https://docs.astral.sh/uv/">uv</a>. The committed checkpoints come with the clone (about 200 MB), so evaluating them needs no training.</p>
+<pre><code>git clone https://github.com/Matthew-Eucaristo/solitaire-rl
+cd solitaire-rl
+uv sync --extra dev
+.venv/bin/python -m pytest -q        # 54 tests
+.venv/bin/python eval.py --policy heuristic --deals 1000 --variant draw1 --jobs 8
+.venv/bin/python eval.py --policy ppo:checkpoints/ppo_compact_6m.zip --obs compact
+bash scripts/reproduce.sh            # M0–M3 checks, under 30 min</code></pre>
+    <p>The canonical 57.9% portfolio, every member from <code>checkpoints/</code>. Each member plays every deal.</p>
+<pre><code>.venv/bin/python eval.py --obs compact_hint --deals 1000 --jobs 4 --policy \
+  'portfolio:ppo:checkpoints/ppo_amp1_9m_1p6m.zip,ppo:checkpoints/ppo_divC.zip,ppo:checkpoints/ppo_divD.zip,ppo:checkpoints/ppo_sparse.zip,ppo:checkpoints/ppo_amp512.zip,ppo:checkpoints/ppo_bcxl.zip,ppo:checkpoints/ppo_bcxllr6m.zip,ppo:checkpoints/ppo_hintbc.zip,qrdqn:checkpoints/qrdqn_400000.pt'</code></pre>
+    <p>Train your own. Both scripts write <code>metrics.csv</code>, TensorBoard logs and <code>config.json</code> with the git hash into <code>runs/</code>.</p>
+<pre><code>.venv/bin/python train_ppo.py --obs compact --steps 3000000 --n-envs 8 --out runs/ppo
+.venv/bin/python train_dqn.py --obs compact --steps 250000 --out runs/dqn</code></pre>
+  </div>
+</section>
+
+<section class="close" aria-labelledby="close-title">
+  <h2 id="close-title"><span>The paper,</span> <span>or the code?</span></h2>
+  <div class="close-mid">
+  <div class="close-actions">
+    <a class="btn btn-lg" href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/paper/main.pdf">Read the paper draft</a>
+    <span class="or">or</span>
+    <a class="btn btn-lg btn-alt" href="https://github.com/Matthew-Eucaristo/solitaire-rl">Browse the repository</a>
+  </div>
+  <p class="close-note">The draft in <code>paper/</code> writes up the methods, results and every negative result; it has not been submitted to a venue.</p>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="foot-cols">
+    <ul>
+      <li>Results</li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/RESULTS.md">RESULTS.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/ANALYSIS.md">ANALYSIS.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/EVIDENCE.md">EVIDENCE.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/tree/main/results">results/</a></li>
+    </ul>
+    <ul>
+      <li>Environment</li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/RULES.md">RULES.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/ACTION_SCHEMA.md">ACTION_SCHEMA.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/REWARDS.md">REWARDS.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/HEURISTIC.md">HEURISTIC.md</a></li>
+    </ul>
+    <ul>
+      <li>Project</li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/DECISIONS.md">DECISIONS.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/REFERENCES.md">REFERENCES.md</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/tree/main/paper">paper/</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/tree/main/checkpoints">checkpoints/</a></li>
+    </ul>
+    <ul>
+      <li>Code</li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl">Repository</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/tree/main/src/solitaire_rl">src/solitaire_rl</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/tree/main/web">web/</a></li>
+      <li><a href="https://github.com/Matthew-Eucaristo/solitaire-rl/blob/main/LICENSE">MIT License</a></li>
+    </ul>
+  </div>
+  <p class="foot-mark" aria-hidden="true"><svg viewBox="0 0 1000 190" role="presentation"><text x="0" y="150" font-size="200" textLength="1000" lengthAdjust="spacingAndGlyphs">solitaire-rl</text></svg></p>
+  <p class="legal">MIT License, © 2026 Matthew Eucaristo. Every figure on this page comes from a committed eval run in <code>results/</code>.</p>
+</footer>
+</body>
+</html>
