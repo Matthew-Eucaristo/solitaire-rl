@@ -78,7 +78,7 @@ experiment log: `EVIDENCE.md`, `RESULTS.md`.
 .venv/bin/python -m pytest -q                                        # 54 tests
 .venv/bin/python eval.py --policy heuristic --deals 1000 --variant draw1 --jobs 8
 .venv/bin/python eval.py --policy ppo:checkpoints/ppo_compact_6m.zip --obs compact
-.venv/bin/python scripts/reproduce.sh                                # M0–M3 checks < 30 min
+bash scripts/reproduce.sh                                        # M0–M3 checks < 30 min
 ```
 
 ## Train your own
