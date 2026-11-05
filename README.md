@@ -9,6 +9,8 @@ raw game state — no vision, no pixels, state vectors + legal-move masking —
 evaluated fairly on a fixed set of 1000 deals against a deterministic
 heuristic baseline.
 
+**Website:** https://matthew-eucaristo.github.io/solitaire-rl/ (built from `site/` by `site/build.sh`)
+
 ![MaskablePPO winning a benchmark deal](recordings/ppo_win_seed47.gif)
 
 ## Play it in your browser
