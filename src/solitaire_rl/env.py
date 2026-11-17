@@ -30,7 +30,6 @@ from solitaire_rl.moves import Move, MoveKind, apply_move, legal_moves
 from solitaire_rl.obs import OBS_VARIANTS, encode_state, obs_dim
 from solitaire_rl.state import DRAW1, VARIANTS, GameState, deal
 
-# Outcome labels reported in info["outcome"].
 OUTCOME_WIN = "win"
 OUTCOME_CONCEDE = "concede"
 OUTCOME_NO_MOVES = "no_moves"
@@ -39,22 +38,19 @@ OUTCOME_IDLE = "no_progress_idle"
 OUTCOME_TRUNCATED = "truncated"
 OUTCOME_ILLEGAL = "illegal_action"
 
-# Training deals are sampled uniformly from [TRAIN_SEED_MIN, 2**31). Benchmark
-# deals are seeds 0..999 and are never produced by this sampler — see
-# DECISIONS.md.
 TRAIN_SEED_MIN = 1_000_000
 
 DEFAULT_REWARD_CONFIG: dict[str, float] = {
-    "win": 1.0,  # bonus on winning the episode
-    "foundation": 1.0 / 52.0,  # per card moved to a foundation
-    "reveal": 0.15,  # per face-down card flipped
-    "waste_play": 0.02,  # per waste card moved to the tableau
-    "idle_after": 20,  # idle moves tolerated before `idle_penalty` applies
-    "idle_penalty": -0.005,  # per move with no progress after `idle_after`
-    "recycle_penalty": -0.02,  # per redeal (draw-1 has ~24 free draws/cycle)
-    "illegal": -0.1,  # choosing a masked-out action
-    "concede": 0.0,  # choosing to resign
-    "loss": 0.0,  # any non-win termination
+    "win": 1.0,
+    "foundation": 1.0 / 52.0,
+    "reveal": 0.15,
+    "waste_play": 0.02,
+    "idle_after": 20,
+    "idle_penalty": -0.005,
+    "recycle_penalty": -0.02,
+    "illegal": -0.1,
+    "concede": 0.0,
+    "loss": 0.0,
 }
 
 
@@ -110,9 +106,8 @@ class KlondikeEnv(gym.Env):
         self._seen: set[tuple] = set()
         self._outcome: str | None = None
         self._legal_cache: list[Move] | None = None
-        self._heuristic = None  # lazy HeuristicPolicy for compact_hint obs
+        self._heuristic = None
 
-    # ------------------------------------------------------------------ API
     def reset(self, *, seed: int | None = None, options: dict | None = None):
         if seed is None and options and "seed" in options:
             seed = options["seed"]
@@ -155,7 +150,6 @@ class KlondikeEnv(gym.Env):
             legal = self._legal()
             legal_ids = self._legal_ids(legal)
             if action not in legal_ids:
-                # Illegal (masked-out) action: penalize, end the episode.
                 terminated = True
                 self._outcome = OUTCOME_ILLEGAL
                 reward += cfg["illegal"] + cfg["loss"]
@@ -215,7 +209,6 @@ class KlondikeEnv(gym.Env):
         self._frames.append(raw)
         return self._obs(), reward, terminated, truncated, self._info()
 
-    # ------------------------------------------------------------- helpers
     def _legal(self) -> list[Move]:
         if self._legal_cache is None:
             assert self.state is not None
@@ -277,7 +270,6 @@ class KlondikeEnv(gym.Env):
             "is_win": st.is_win(),
         }
 
-    # --------------------------------------------------------------- render
     def render(self, mode: str = "ansi") -> str:
         from solitaire_rl.render import render_text
 

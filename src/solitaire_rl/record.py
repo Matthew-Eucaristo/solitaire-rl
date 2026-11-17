@@ -60,7 +60,6 @@ def record_episode(
     outcome = info["outcome"]
     frames.append(render_frame(env.state, footer=f">>> {outcome} moves={info['moves']}"))
 
-    # Subsample to stay under max_frames while keeping start/end.
     if len(frames) > max_frames:
         step = len(frames) / max_frames
         frames = [frames[int(i * step)] for i in range(max_frames - 1)] + [frames[-1]]

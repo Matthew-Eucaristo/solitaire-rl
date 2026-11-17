@@ -67,7 +67,7 @@ def main() -> None:
     )
     ap.add_argument("--device", default="cpu", choices=["cpu", "mps"])
     ap.add_argument("--out", default=None)
-    ap.add_argument("--n-envs", type=int, default=8)  # parallel env procs
+    ap.add_argument("--n-envs", type=int, default=8)
     ap.add_argument("--n-steps", type=int, default=1024)
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--n-epochs", type=int, default=4)

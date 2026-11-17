@@ -129,7 +129,6 @@ def test_run_eval_portfolio():
     assert summary["portfolio"]["members"] == ["heuristic", "heuristic"]
     for r in summary["results"]:
         assert r["member_index"] in (0, 1)
-    # identical members: per-deal result must equal the single-member result
     solo = run_eval("heuristic", list(range(10)), kw, jobs=1)
     assert [r["outcome"] for r in summary["results"]] == [
         r["outcome"] for r in solo["results"]

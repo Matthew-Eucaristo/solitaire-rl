@@ -19,14 +19,14 @@ from solitaire_rl.moves import Move, MoveKind, legal_moves
 from solitaire_rl.state import GameState
 
 ACTION_DRAW = 0
-ACTION_WASTE_TO_TABLEAU_BASE = 1  # + dst col (0..6) -> 1..7
+ACTION_WASTE_TO_TABLEAU_BASE = 1
 ACTION_WASTE_TO_FOUNDATION = 8
-ACTION_TABLEAU_TO_FOUNDATION_BASE = 9  # + src col -> 9..15
-ACTION_TABLEAU_TO_TABLEAU_BASE = 16  # src*91 + dst*13 + j -> 16..652
+ACTION_TABLEAU_TO_FOUNDATION_BASE = 9
+ACTION_TABLEAU_TO_TABLEAU_BASE = 16
 ACTION_CONCEDE = 653
 N_ACTIONS = 654
 
-MAX_RUN_LEN = 13  # a descending alternating run can hold at most K..A
+MAX_RUN_LEN = 13
 
 
 def move_to_action(move: Move) -> int:

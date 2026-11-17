@@ -31,7 +31,6 @@ from solitaire_rl.state import DRAW1, GameState
 
 WEB_DIR = Path(__file__).resolve().parent.parent.parent / "web"
 
-# env_kwargs each learned checkpoint was trained/evaluated on.
 _AGENT_POLICIES: dict[str, dict[str, Any]] = {
     "heuristic": {"label": "Heuristic (rule-based, 41.4%)", "spec": "heuristic", "env": {}},
     "dqn": {
@@ -102,8 +101,8 @@ def _move_desc(state: GameState, m: Move) -> dict[str, Any]:
 @dataclass
 class Session:
     env: KlondikeEnv
-    history: list[int]  # applied action ids (manual + agent moves)
-    undo: list[KlondikeEnv]  # env deep-copies, one per applied move
+    history: list[int]
+    undo: list[KlondikeEnv]
     _agents: dict[str, Any] | None = None
 
     def agent(self, key: str):

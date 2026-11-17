@@ -17,10 +17,10 @@ def _finish_state() -> GameState:
         stock=[],
         waste=[],
         foundations=[
-            [Card(r, 0) for r in range(1, 13)],  # clubs A..Q (12)
-            [Card(r, 1) for r in range(1, 14)],  # diamonds
-            [Card(r, 2) for r in range(1, 14)],  # hearts
-            [Card(r, 3) for r in range(1, 14)],  # spades
+            [Card(r, 0) for r in range(1, 13)],
+            [Card(r, 1) for r in range(1, 14)],
+            [Card(r, 2) for r in range(1, 14)],
+            [Card(r, 3) for r in range(1, 14)],
         ],
     )
     return st
@@ -71,7 +71,6 @@ def test_win_on_last_foundation_move():
     env.state = _finish_state()
     env._legal_cache = None
     env._seen = {env.state.signature()}
-    # find the t0->foundation action id: 9 + 0
     _, r, term, _, info = env.step(9)
     assert term
     assert info["outcome"] == "win"
@@ -92,7 +91,6 @@ def test_max_steps_truncates():
 
 
 def test_cycle_detection_terminates():
-    # A stock-only draw-1 game: draw all 24, recycle -> identical signature.
     st = GameState(
         tableau=[TableauColumn([], []) for _ in range(7)],
         stock=[Card(1 + (i % 13), (i // 13) % 4) for i in range(24)],
@@ -153,7 +151,6 @@ def test_perfect_obs_has_stock_order():
     obs = env._obs()
     assert obs.shape == (PERFECT_DIM,)
     st = env.state
-    # first stock card must appear one-hot in the stock-order block
     import solitaire_rl.obs as obs_mod
 
     base = obs_mod.POMDP_DIM
@@ -178,7 +175,7 @@ def test_compact_hides_stock_order():
     env.reset(seed=1)
     st = env.state
     before = env._raw_obs().copy()
-    st.stock.reverse()  # scramble hidden order
+    st.stock.reverse()
     after = env._raw_obs()
     np.testing.assert_array_equal(before, after)
 
@@ -189,7 +186,7 @@ def test_pomdp_hides_stock_order():
     env.reset(seed=0)
     st = env.state
     a = env._raw_obs().copy()
-    st.stock = st.stock[::-1]  # permute hidden order
+    st.stock = st.stock[::-1]
     b = env._raw_obs()
     assert np.array_equal(a, b)
 

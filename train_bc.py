@@ -45,7 +45,7 @@ def collect(kw: dict, n_games: int, rng: np.random.Generator, teacher: str = "he
         pols = [load_policy(teacher, kw)]
     xs, ys = [], []
     env = KlondikeEnv(**kw)
-    train_seed_lo = 1_000_000  # never benchmark seeds — same rule as RL training
+    train_seed_lo = 1_000_000
     for _ in range(n_games):
         obs, _ = env.reset(seed=int(rng.integers(train_seed_lo, 2**31 - 1)))
         while True:

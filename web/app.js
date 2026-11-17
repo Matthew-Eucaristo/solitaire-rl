@@ -1,6 +1,3 @@
-/* Klondike UI — talks only to /api; every rule decision lives server-side
-   in the same engine the tests and evals use. */
-
 const $ = (s) => document.querySelector(s);
 const api = async (path, opts) => {
   const r = await fetch(path, opts);
@@ -17,14 +14,12 @@ const SUIT_GLYPH = ["♣", "♦", "♥", "♠"];
 const SUIT_RED = [false, true, true, false];
 const K = { DRAW: 0, W2T: 1, W2F: 2, T2F: 3, T2T: 4 };
 
-let S = null;              // last serialized state
+let S = null;
 let watching = false;
 let watchTimer = null;
-let prevRects = new Map(); // card id -> rect, for FLIP animation
+let prevRects = new Map();
 let dealStart = Date.now();
 let timeTimer = null;
-
-/* ---------------- sfx (synthesized, no assets) ---------------- */
 
 const sfx = (() => {
   let ctx = null;
@@ -70,8 +65,6 @@ const sfx = (() => {
   };
 })();
 
-/* ---------------- confetti on win ---------------- */
-
 function confetti() {
   const colors = ["#ffd95e", "#4fd2ff", "#ff6b6b", "#7ee081", "#c084fc", "#fff"];
   for (let i = 0; i < 70; i++) {
@@ -88,8 +81,6 @@ function confetti() {
     setTimeout(() => p.remove(), 2600);
   }
 }
-
-/* ---------------- rendering ---------------- */
 
 function cardEl(code, faceDown) {
   const el = document.createElement("div");
@@ -135,7 +126,6 @@ function render(newDeal) {
   snapshotRects();
   const st = S;
 
-  /* stock */
   const stock = $("#stock");
   stock.className = "pile slot";
   stock.innerHTML = "";
@@ -153,7 +143,6 @@ function render(newDeal) {
   stock.onclick = () => doMove({ kind: K.DRAW });
   delete stock.dataset.col;
 
-  /* waste — fan the last few for draw-3 */
   const waste = $("#waste");
   waste.innerHTML = "";
   waste.dataset.zone = "waste";
@@ -170,7 +159,6 @@ function render(newDeal) {
   }
   waste.style.width = `calc(var(--cw) + ${(show - 1) * 18}px)`;
 
-  /* foundations */
   const fdn = $("#foundations");
   fdn.innerHTML = "";
   for (let s = 0; s < 4; s++) {
@@ -183,7 +171,6 @@ function render(newDeal) {
     fdn.appendChild(pile);
   }
 
-  /* tableau */
   const tab = $("#tableau");
   tab.innerHTML = "";
   st.tableau.forEach((col, c) => {
@@ -215,7 +202,6 @@ function render(newDeal) {
     tab.appendChild(pile);
   });
 
-  /* status */
   $("#stSeed").textContent = st.seed;
   $("#stMoves").textContent = st.moves;
   $("#stFound").textContent = `${st.foundations_count}/52`;
@@ -234,8 +220,6 @@ function render(newDeal) {
 function cssNum(v) {
   return parseInt(getComputedStyle(document.documentElement).getPropertyValue(v));
 }
-
-/* ---------------- outcomes / toast ---------------- */
 
 function showOutcome(outcome) {
   const b = $("#banner");
@@ -272,8 +256,6 @@ function toast(msg) {
   clearTimeout(toastT);
   toastT = setTimeout(() => t.classList.add("hidden"), 2200);
 }
-
-/* ---------------- moves ---------------- */
 
 async function apply(resp, keepWatch) {
   const wasWatching = watching;
@@ -315,8 +297,6 @@ async function newDeal() {
 }
 window.newDeal = newDeal;
 
-/* ---------------- drag & drop ---------------- */
-
 function movesForCard(el) {
   const zone = el.dataset.zone;
   if (!S || !S.legal) return [];
@@ -353,7 +333,6 @@ document.addEventListener("pointerdown", (e) => {
   const zone = el.dataset.zone;
   const col = +el.dataset.col, idx = +el.dataset.idx;
 
-  /* ghost stack */
   const ghost = document.createElement("div");
   ghost.className = "ghost";
   const srcCards =
@@ -365,7 +344,6 @@ document.addEventListener("pointerdown", (e) => {
   place(e);
   srcCards.forEach((n) => n.classList.add("dragging"));
 
-  /* highlight legal targets */
   document.querySelectorAll("#tableau .pile, #foundations .pile").forEach((p) => {
     p.classList.toggle("drop-ok", targets.has(p.dataset.col));
   });
@@ -388,7 +366,6 @@ document.addEventListener("pointerdown", (e) => {
   e.preventDefault();
 });
 
-/* double-click: foundation first, else any move for that card */
 document.addEventListener("dblclick", (e) => {
   if (watching || !S || S.outcome) return;
   const el = e.target.closest(".card.up");
@@ -397,8 +374,6 @@ document.addEventListener("dblclick", (e) => {
   const pick = cands.find((m) => m.kind === K.T2F || m.kind === K.W2F) || cands[0];
   if (pick) doMove(pick);
 });
-
-/* ---------------- agent ---------------- */
 
 async function loadPolicies() {
   const { policies } = await api("/api/agent/policies");
@@ -411,7 +386,7 @@ function setAgentStatus(t) { $("#stAgent").textContent = t; }
 
 function scheduleAgent() {
   if (!watching || S.outcome) return;
-  const delay = 1400 - +$("#agentSpeed").value; // slider: right = faster
+  const delay = 1400 - +$("#agentSpeed").value;
   watchTimer = setTimeout(agentStep, Math.max(60, delay));
 }
 
@@ -452,8 +427,6 @@ function stopAgent() {
   $("#agentToggle").classList.remove("watching");
 }
 
-/* ---------------- wiring ---------------- */
-
 $("#newGame").onclick = newDeal;
 $("#undo").onclick = async () => {
   if (watching && !S.outcome) return;
@@ -488,7 +461,6 @@ $("#mute").onclick = () => {
   if (!sfx.muted) sfx.found();
 };
 
-/* keyboard: Space=draw, U=undo, H=hint, N=new deal, Esc=stop agent */
 document.addEventListener("keydown", (e) => {
   if (e.target.matches("input,select") || !S) return;
   if (e.key === " " && !S.outcome && !watching) { e.preventDefault(); doMove({ kind: K.DRAW }); }
@@ -498,7 +470,6 @@ document.addEventListener("keydown", (e) => {
   else if (e.key === "Escape") { stopAgent(); }
 });
 
-/* first gesture unlocks WebAudio */
 document.addEventListener("pointerdown", () => sfx.unlock(), { once: true });
 
 $("#mute").textContent = sfx.muted ? "🔇" : "🔊";

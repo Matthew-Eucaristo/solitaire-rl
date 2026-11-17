@@ -18,7 +18,6 @@ def render_text(state: GameState, footer: str = "") -> str:
     """Render the board as aligned monospace text."""
     lines: list[str] = []
 
-    # Stock / waste / foundations row.
     stock_str = f"[{len(state.stock):2d}]" if state.stock else "[--]"
     waste_top = _fmt(state.waste[-1] if state.waste else None)
     waste_str = f"{waste_top}({len(state.waste):2d})"
@@ -28,7 +27,6 @@ def render_text(state: GameState, footer: str = "") -> str:
     lines.append(f"  STK {stock_str}  WST {waste_str}        FDN {fdn}")
     lines.append("")
 
-    # Tableau: print row by row over the tallest column.
     height = max(len(c.down) + len(c.up) for c in state.tableau)
     grid: list[list[str]] = []
     for col in state.tableau:
@@ -48,17 +46,13 @@ def render_text(state: GameState, footer: str = "") -> str:
     return "\n".join(lines)
 
 
-# --------------------------------------------------------------------------
-# PIL frame rendering (for GIF/MP4 episode recordings)
-# --------------------------------------------------------------------------
-
 def _load_font(size: int):
     from PIL import ImageFont
 
     candidates = [
-        "/System/Library/Fonts/Menlo.ttc",  # macOS
+        "/System/Library/Fonts/Menlo.ttc",
         "/System/Library/Fonts/Monaco.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",  # linux
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
         "/Library/Fonts/Courier New.ttf",
     ]
@@ -85,7 +79,6 @@ def render_frame(state: GameState, footer: str = "", cell_w: int = 46, cell_h: i
     font_small = _load_font(14)
 
     x0 = left_pad
-    # Stock / waste / foundations.
     stock_txt = f"STK[{len(state.stock):2d}]" if state.stock else "STK[--]"
     dr.text((x0, top_pad), stock_txt, font=font_small, fill=(180, 180, 180))
     if state.waste:
@@ -106,7 +99,6 @@ def render_frame(state: GameState, footer: str = "", cell_w: int = 46, cell_h: i
         dr.text((fx, top_pad), f"{txt}{SUIT_SYMBOLS[s]}", font=font_small, fill=color)
         fx += 55
 
-    # Tableau.
     ty = top_pad + 2 * cell_h
     for c, col in enumerate(state.tableau):
         x = x0 + c * cell_w
@@ -121,7 +113,6 @@ def render_frame(state: GameState, footer: str = "", cell_w: int = 46, cell_h: i
                 color = (255, 110, 110) if card.is_red else (235, 235, 235)
                 dr.text((x + 2, y + 4), str(card), font=font, fill=color)
 
-    # Column face-down counts + footer.
     fy = ty + height * cell_h + 6
     dr.text(
         (x0, fy),

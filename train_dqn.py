@@ -43,7 +43,7 @@ class Replay:
         self.act = np.zeros(capacity, dtype=np.int32)
         self.rew = np.zeros(capacity, dtype=np.float32)
         self.done = np.zeros(capacity, dtype=np.float32)
-        self.mask = np.zeros((capacity, 654), dtype=bool)  # next-state masks
+        self.mask = np.zeros((capacity, 654), dtype=bool)
         self.i = 0
         self.n = 0
 
@@ -168,9 +168,6 @@ def main() -> None:
         e = eps(step)
         legal_mask = env.action_masks()
         if rng.random() < e:
-            # Explore game moves only: CONCEDE stays in the mask for the
-            # greedy policy but is never taken by epsilon exploration —
-            # uniformly sampling it would end most episodes in a few steps.
             pool = np.flatnonzero(legal_mask)
             pool = pool[pool != ACTION_CONCEDE]
             action = int(rng.choice(pool))

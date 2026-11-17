@@ -151,9 +151,6 @@ def main() -> None:
                         apply_move(w, m)
                         scores[a] += rollout(w, hp, args.horizon)
                 best = max(scores, key=scores.get)
-                # Defer to the guide when the search can't discriminate:
-                # rollouts that converge to the same outcome carry no
-                # signal, and the learned policy is the better tiebreak.
                 guide_a = guide.act(env)
                 a = best if scores[best] - scores.get(guide_a, 0.0) > 0.02 else guide_a
             _, _, term, trunc, _ = env.step(a)

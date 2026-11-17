@@ -51,9 +51,9 @@ class Move:
 class MoveOutcome:
     """What an applied move changed — drives rewards and progress tracking."""
 
-    revealed: bool = False  # a face-down card was flipped
+    revealed: bool = False
     to_foundation: bool = False
-    from_waste: bool = False  # a waste card entered the tableau/foundations
+    from_waste: bool = False
     recycled: bool = False
     drew: bool = False
     emptied_column: bool = False
@@ -66,7 +66,7 @@ class MoveOutcome:
 
 def _can_place_on_tableau(card: Card, col_has_cards: bool, top: Card | None) -> bool:
     if not col_has_cards:
-        return card.rank == 13  # empty column: King only
+        return card.rank == 13
     assert top is not None
     return top.rank == card.rank + 1 and other_color(top, card)
 
@@ -75,12 +75,10 @@ def legal_moves(state: GameState) -> list[Move]:
     """All legal game moves in `state`, in a fixed enumeration order."""
     moves: list[Move] = []
 
-    # Draw / redeal.
     can_redeal = state.waste and (state.max_redeals is None or state.redeals < state.max_redeals)
     if state.stock or can_redeal:
         moves.append(Move(MoveKind.DRAW))
 
-    # Waste plays.
     if state.waste:
         w = state.waste[-1]
         if w.rank == state.foundation_height(w.suit) + 1:
@@ -89,7 +87,6 @@ def legal_moves(state: GameState) -> list[Move]:
             if _can_place_on_tableau(w, bool(col.up), col.top):
                 moves.append(Move(MoveKind.WASTE_TO_TABLEAU, dst=d))
 
-    # Tableau plays.
     for c, col in enumerate(state.tableau):
         if not col.up:
             continue

@@ -34,7 +34,7 @@ class EpisodeResult:
     redeals: int
     wall_ms: float
     total_reward: float = 0.0
-    member_index: int = -1  # portfolio runs: which member produced this result
+    member_index: int = -1
 
 
 def play_episode(policy, seed: int, env_kwargs: dict) -> EpisodeResult:
@@ -63,10 +63,6 @@ def play_episode(policy, seed: int, env_kwargs: dict) -> EpisodeResult:
         total_reward=total_reward,
     )
 
-
-# ----------------------------------------------------------------------
-# Multiprocessing workers — policy built once per worker process.
-# ----------------------------------------------------------------------
 
 _WORKER = None
 _WORKERS: list | None = None

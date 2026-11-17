@@ -40,7 +40,6 @@ def _random_states(n: int, seed: int = 0):
                 break
             yield st
             produced += 1
-            # bias toward non-draw moves so we reach deep states
             non_draw = [m for m in moves if m.kind != MoveKind.DRAW]
             pick_from = non_draw if non_draw and rng.random() < 0.7 else moves
             m = rng.choice(pick_from)
@@ -61,7 +60,6 @@ def test_mask_matches_legal_on_random_states():
         ids = set(np.flatnonzero(mask))
         legal = set(legal_action_ids(st)) | {ACTION_CONCEDE}
         assert ids == legal, f"mask mismatch: extra={ids - legal} missing={legal - ids}"
-        # every legal move applies cleanly on a clone and round-trips
         for m in legal_moves(st):
             aid = move_to_action(m)
             assert mask[aid]

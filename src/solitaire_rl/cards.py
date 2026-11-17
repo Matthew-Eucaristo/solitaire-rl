@@ -15,20 +15,20 @@ HEARTS = 2
 SPADES = 3
 
 NUM_SUITS = 4
-NUM_RANKS = 13  # Ace=1 .. King=13
+NUM_RANKS = 13
 DECK_SIZE = 52
 
 RED_SUITS = frozenset({DIAMONDS, HEARTS})
 SUIT_SYMBOLS = ("♣", "♦", "♥", "♠")
-RANK_CHARS = ".A23456789TJQK"  # index by rank; T=10
+RANK_CHARS = ".A23456789TJQK"
 
 
 @dataclass(frozen=True, slots=True)
 class Card:
     """An immutable playing card."""
 
-    rank: int  # 1 (Ace) .. 13 (King)
-    suit: int  # 0=clubs 1=diamonds 2=hearts 3=spades
+    rank: int
+    suit: int
 
     def __post_init__(self) -> None:
         if not (1 <= self.rank <= NUM_RANKS):

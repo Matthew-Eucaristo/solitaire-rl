@@ -18,10 +18,10 @@ def test_card_roundtrip():
 
 
 def test_card_color():
-    assert Card(5, 0).is_red is False  # clubs
-    assert Card(5, 1).is_red  # diamonds
-    assert Card(5, 2).is_red  # hearts
-    assert Card(5, 3).is_red is False  # spades
+    assert Card(5, 0).is_red is False
+    assert Card(5, 1).is_red
+    assert Card(5, 2).is_red
+    assert Card(5, 3).is_red is False
 
 
 def test_deal_layout():

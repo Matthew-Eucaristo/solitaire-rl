@@ -19,7 +19,6 @@ def test_new_game_layout():
     assert st["stock_count"] == 24
     assert st["waste"] == []
     assert all(f == [] for f in st["foundations"])
-    # column i: i face-down + 1 face-up
     for i, col in enumerate(st["tableau"]):
         assert col["down"] == i
         assert len(col["up"]) == 1
@@ -32,7 +31,7 @@ def test_deterministic_deal():
 
 def test_legal_moves_present_and_draw_cycles_waste():
     st = _new(42)
-    assert any(m["kind"] == 0 for m in st["legal"])  # DRAW
+    assert any(m["kind"] == 0 for m in st["legal"])
     st = client.post("/api/move", json={"kind": 0}).json()
     assert len(st["waste"]) == 1
     assert st["stock_count"] == 23

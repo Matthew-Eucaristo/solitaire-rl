@@ -80,8 +80,7 @@ class HeuristicPolicy:
         w2t = [m for m in moves if m.kind == MoveKind.WASTE_TO_TABLEAU]
         draw = [m for m in moves if m.kind == MoveKind.DRAW]
 
-        # ---- P1: moves that flip a face-down card -------------------------
-        revealers: list[tuple[int, int, Move]] = []  # (-down, prefer_fdn, move)
+        revealers: list[tuple[int, int, Move]] = []
         for m in t2f:
             col = state.tableau[m.src]
             if len(col.up) == 1 and col.down:
@@ -94,38 +93,31 @@ class HeuristicPolicy:
             revealers.sort(key=lambda t: (t[0], -t[1], t[2].src, t[2].dst, t[2].run_start))
             return move_to_action(revealers[0][2])
 
-        # ---- P2: safe foundation moves ------------------------------------
         safe_t2f = [m for m in t2f if self._is_safe(state, m.src)]
         if safe_t2f:
             return move_to_action(safe_t2f[0])
         if w2f and self._is_safe_waste(state):
             return move_to_action(w2f[0])
 
-        # ---- P3: waste -> tableau -----------------------------------------
         if w2t:
             return move_to_action(w2t[0])
 
-        # ---- P4: productive tableau->tableau -------------------------------
         productive = [m for m in t2t if self._productive_t2t(state, m)]
         if productive:
             best = max(productive, key=lambda m: self._t2t_score(state, m))
             return move_to_action(best)
 
-        # ---- P5: unsafe foundation, only once the stock is empty ----------
         if not state.stock:
             if w2f:
                 return move_to_action(w2f[0])
             if t2f:
                 return move_to_action(t2f[0])
 
-        # ---- P6: draw / redeal --------------------------------------------
         if draw:
             return move_to_action(draw[0])
 
-        # ---- P7: any remaining non-repeating move --------------------------
         return move_to_action(moves[0])
 
-    # ----------------------------------------------------------------------
     @staticmethod
     def _repeats(env: KlondikeEnv, move: Move) -> bool:
         """True when applying `move` would revisit a seen board signature.
@@ -182,7 +174,7 @@ class HeuristicPolicy:
         if new_top.rank == state.foundation_height(new_top.suit) + 1:
             return True
         if src.down:
-            return True  # shortened the pile covering face-down cards
+            return True
         for d2, c2 in enumerate(state.tableau):
             if d2 in (m.src, m.dst):
                 continue
@@ -195,8 +187,8 @@ class HeuristicPolicy:
         src = state.tableau[m.src]
         dst = state.tableau[m.dst]
         run_len = len(src.up) - m.run_start
-        unburies = 1 if m.run_start > 0 else 0  # frees a face-up card below
-        extends = 1 if dst.up else 0  # lands on an existing run
+        unburies = 1 if m.run_start > 0 else 0
+        extends = 1 if dst.up else 0
         new_top_founds = 0
         if m.run_start > 0:
             nt = src.up[m.run_start - 1]
@@ -208,11 +200,6 @@ class HeuristicPolicy:
             -m.dst,
             -m.run_start,
         )
-
-
-# ----------------------------------------------------------------------
-# Learned-policy wrappers (DQN checkpoints / MaskablePPO models)
-# ----------------------------------------------------------------------
 
 
 class MaskedArgmaxPolicy:

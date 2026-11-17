@@ -47,15 +47,14 @@ class GameState:
     """Complete mutable state of one Klondike game."""
 
     tableau: list[TableauColumn]
-    stock: list[Card]  # stock[-1] is the next card drawn
-    waste: list[Card]  # waste[-1] is the playable waste card
-    foundations: list[list[Card]]  # one pile per suit
+    stock: list[Card]
+    waste: list[Card]
+    foundations: list[list[Card]]
     draw_size: int = 1
-    max_redeals: int | None = None  # None = unlimited redeals
+    max_redeals: int | None = None
     redeals: int = 0
     moves: int = 0
 
-    # ------------------------------------------------------------------
     def clone(self) -> GameState:
         return GameState(
             tableau=[TableauColumn(list(c.down), list(c.up)) for c in self.tableau],
@@ -68,7 +67,6 @@ class GameState:
             moves=self.moves,
         )
 
-    # ------------------------------------------------------------------
     def foundation_height(self, suit: int) -> int:
         """Rank of the top foundation card of `suit` (0 when empty)."""
         return len(self.foundations[suit])
@@ -82,7 +80,6 @@ class GameState:
     def is_win(self) -> bool:
         return self.foundation_total() == 52
 
-    # ------------------------------------------------------------------
     def signature(self) -> tuple:
         """Hashable fingerprint of the *full* board state (including hidden
         stock order). `redeals` is deliberately excluded: a position that
@@ -114,8 +111,6 @@ def deal(seed: int, variant: str = DRAW1, max_redeals: int | None = None) -> Gam
         tableau.append(TableauColumn(down=column_cards[:-1], up=column_cards[-1:]))
 
     stock = deck[pos:]
-    # stock[-1] must be the first card drawn; the deck's top (deck[-1] after
-    # the tableau deal consumed from the front) should be drawn first.
     stock.reverse()
 
     return GameState(

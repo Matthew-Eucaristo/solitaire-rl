@@ -19,44 +19,36 @@ import numpy as np
 
 from solitaire_rl.state import GameState
 
-MAX_UP = 13  # max face-up run length in a tableau column
-MAX_DOWN = 6  # max face-down cards dealt into a column
+MAX_UP = 13
+MAX_DOWN = 6
 MAX_STOCK = 24
 MAX_WASTE = 24
-CARD_DIM = 53  # 52 cards + empty slot
+CARD_DIM = 53
 
-TABLEAU_DIM = 7 * MAX_UP * CARD_DIM  # 4823
-WASTE_DIM = MAX_WASTE * CARD_DIM  # 1272
-FOUNDATION_DIM = 4 * 14  # one-hot of top rank (0=empty .. 13=King)
+TABLEAU_DIM = 7 * MAX_UP * CARD_DIM
+WASTE_DIM = MAX_WASTE * CARD_DIM
+FOUNDATION_DIM = 4 * 14
 DOWN_COUNT_DIM = 7
 SCALAR_DIM = 4
 POMDP_DIM = TABLEAU_DIM + DOWN_COUNT_DIM + WASTE_DIM + FOUNDATION_DIM + 1 + SCALAR_DIM
 
-STOCK_ORDER_DIM = MAX_STOCK * CARD_DIM  # perfect-info extras
+STOCK_ORDER_DIM = MAX_STOCK * CARD_DIM
 DOWN_CONTENT_DIM = 7 * MAX_DOWN * CARD_DIM
 PERFECT_EXTRA_DIM = STOCK_ORDER_DIM + DOWN_CONTENT_DIM
 PERFECT_DIM = POMDP_DIM + PERFECT_EXTRA_DIM
 
-# --- compact encoding ------------------------------------------------------
-# Per-slot scalar code instead of one-hot: EMPTY=-1.0, face-down/unknown
-# =-0.5, otherwise card.id / 52 in [0, 1]. Orders of magnitude fewer dims;
-# the right inductive step for small MLPs on a laptop budget.
 CODE_EMPTY = -1.0
 CODE_DOWN = -0.5
-COMPACT_COL_DIM = MAX_UP + 1  # 13 up-slot codes + down count
+COMPACT_COL_DIM = MAX_UP + 1
 COMPACT_POMDP_DIM = (
-    7 * COMPACT_COL_DIM + MAX_WASTE + 4 + 1 + 5  # = 132
+    7 * COMPACT_COL_DIM + MAX_WASTE + 4 + 1 + 5
 )
-COMPACT_PERFECT_EXTRA_DIM = MAX_STOCK + 7 * MAX_DOWN  # = 66
-COMPACT_PERFECT_DIM = COMPACT_POMDP_DIM + COMPACT_PERFECT_EXTRA_DIM  # = 198
+COMPACT_PERFECT_EXTRA_DIM = MAX_STOCK + 7 * MAX_DOWN
+COMPACT_PERFECT_DIM = COMPACT_POMDP_DIM + COMPACT_PERFECT_EXTRA_DIM
 
-# --- hint encoding -----------------------------------------------------------
-# The deterministic heuristic's chosen action as extra feature dims: the
-# policy sees the expert's suggestion and learns when to deviate from it.
-# kind one-hot (6) + src/6 + dst/6 + run_start/12 = 10 dims.
-HINT_KINDS = 6  # draw, w2t, w2f, t2f, t2t, concede
-HINT_DIM = HINT_KINDS + 3  # = 10
-COMPACT_HINT_DIM = COMPACT_POMDP_DIM + HINT_DIM  # = 142
+HINT_KINDS = 6
+HINT_DIM = HINT_KINDS + 3
+COMPACT_HINT_DIM = COMPACT_POMDP_DIM + HINT_DIM
 
 OBS_VARIANTS = ("pomdp", "perfect", "compact", "compact_perfect", "compact_hint")
 
@@ -192,33 +184,27 @@ def encode_state(
     obs = np.zeros(dim, dtype=np.float32)
     pos = 0
 
-    # --- tableau face-up cards: 7 cols x 13 slots x 53 one-hot -------------
     for c in range(7):
         up = state.tableau[c].up
         for s in range(MAX_UP):
             _write_card(obs, pos + s * CARD_DIM, up[s] if s < len(up) else None)
         pos += MAX_UP * CARD_DIM
 
-    # --- face-down counts (0..6 -> /6) ------------------------------------
     for c in range(7):
         obs[pos + c] = len(state.tableau[c].down) / MAX_DOWN
     pos += DOWN_COUNT_DIM
 
-    # --- waste pile: 24 slots x 53 (order preserved) ----------------------
     for s in range(MAX_WASTE):
         _write_card(obs, pos + s * CARD_DIM, state.waste[s] if s < len(state.waste) else None)
     pos += WASTE_DIM
 
-    # --- foundations: 4 x 14 one-hot of top rank --------------------------
     for suit in range(4):
         obs[pos + suit * 14 + state.foundation_height(suit)] = 1.0
     pos += FOUNDATION_DIM
 
-    # --- stock count -------------------------------------------------------
     obs[pos] = len(state.stock) / MAX_STOCK
     pos += 1
 
-    # --- scalars -----------------------------------------------------------
     obs[pos + 0] = float(np.clip(idle_ratio, 0.0, 1.0))
     obs[pos + 1] = 1.0 if has_legal_move else 0.0
     obs[pos + 2] = 1.0 if can_draw else 0.0
